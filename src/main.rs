@@ -1,3 +1,8 @@
+mod azul;
+use azul::Game;
+
 fn main() {
-    println!("Hello, world!");
+
+    let game = Game::new(2);
+    println!("{:#?}", game);
 }
