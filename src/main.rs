@@ -1,8 +1,10 @@
 mod azul;
 use azul::Game;
 
-fn main() {
+fn main() -> Result<(), &'static str>{
 
-    let game = Game::new(2);
+    let game = Game::new(2)?;
     println!("{:#?}", game);
+
+    Ok(())
 }
