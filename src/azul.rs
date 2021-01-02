@@ -1,5 +1,6 @@
 #[derive(Debug)]
 enum Tile {
+    Start,
     Blue,
     Yellow,
     Red,
@@ -69,7 +70,7 @@ type Wall = [Row;  5];
 struct Board {
     score: u8,
     wall: Wall,
-    floor: u8,
+    floor: Vec<Patternline>,
     patterns: Patterns,
 }
 impl Default for Board {
@@ -77,7 +78,7 @@ impl Default for Board {
         Board {
             score: 0,
             wall: Wall::default(),
-            floor: 0,
+            floor: Vec::default(),
             patterns: Patterns::default()
         }
     }
@@ -85,6 +86,8 @@ impl Default for Board {
 
 #[derive(Default, Debug)]
 pub struct Game {
+    turn: u8,
+    player: u8,
     bag: Bag,
     market: Market,
     factories: Vec<Factory>,
@@ -109,6 +112,8 @@ impl Game {
         }
 
         let game = Game {
+            turn: 0,
+            player: 0,
             bag: Bag::default(),
             market: Market::default(),
             factories: factories,
