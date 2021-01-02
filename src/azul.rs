@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 #[derive(Debug)]
 enum Tile {
     Start,
@@ -9,59 +11,88 @@ enum Tile {
 }
 
 #[derive(Debug)]
-struct Bag {
-    blue: u8,
-    yellow: u8,
-    red: u8,
-    black: u8,
-    teal: u8
-}
+struct Bag (Vec<Tile>);
 impl Default for Bag {
     fn default() -> Self {
-        Bag {
-            blue: 20,
-            yellow: 20,
-            red: 20,
-            black: 20,
-            teal: 20
-        }
+        let mut bag = Vec::<Tile>::with_capacity(100);
+        for _ in 0..20 {
+            bag.push(Tile::Blue);
+        };
+        for _ in 0..20 {
+            bag.push(Tile::Yellow);
+        };
+        for _ in 0..20 {
+            bag.push(Tile::Red);
+        };
+        for _ in 0..20 {
+            bag.push(Tile::Black);
+        };
+        for _ in 0..20 {
+            bag.push(Tile::Teal);
+        };
+
+        Bag(bag)
     }
 }
+
+impl Deref for Bag {
+    type Target = Vec<Tile>;
+
+    fn deref(&self) -> &Vec<Tile> {
+        &self.0
+    }
+}
+impl DerefMut for Bag {
+    fn deref_mut(&mut self) -> &mut Vec<Tile> {
+        &mut self.0
+    }
+}
+
 
 #[derive(Default, Debug)]
-struct Factory {
-    blue: u8,
-    yellow: u8,
-    red: u8,
-    black: u8,
-    teal: u8
-}
+struct Factory (Vec<Tile>);
 
-#[derive(Debug)]
-struct Market {
-    start: u8,
-    blue: u8,
-    yellow: u8,
-    red: u8,
-    black: u8,
-    teal: u8
+impl Deref for Factory {
+    type Target = Vec<Tile>;
+
+    fn deref(&self) -> &Vec<Tile> {
+        &self.0
+    }
 }
-impl Default for Market {
-    fn default() -> Self {
-        Market {
-            start: 1,
-            blue: 0,
-            yellow: 0,
-            red: 0,
-            black: 0,
-            teal: 0 
-        }
+impl DerefMut for Factory {
+    fn deref_mut(&mut self) -> &mut Vec<Tile> {
+        &mut self.0
     }
 }
 
+
+#[derive(Debug)]
+struct Market (Vec<Tile>);
+
+impl Default for Market {
+    fn default() -> Self {
+        let mut market = Vec::<Tile>::with_capacity(20);
+        market.push(Tile::Start);
+        Market(market)
+    }
+}
+impl Deref for Market {
+    type Target = Vec<Tile>;
+
+    fn deref(&self) -> &Vec<Tile> {
+        &self.0
+    }
+}
+impl DerefMut for Market {
+    fn deref_mut(&mut self) -> &mut Vec<Tile> {
+        &mut self.0
+    }
+}
+
+
 #[derive(Debug, Default)]
-struct Patternline (Option<Tile>, u8);
-type Patterns = [Patternline; 5];
+struct PatternLine (Option<Tile>, u8);
+type Patterns = [PatternLine; 5];
 
 type Row  = [bool; 5];
 type Wall = [Row;  5];
@@ -70,7 +101,7 @@ type Wall = [Row;  5];
 struct Board {
     score: u8,
     wall: Wall,
-    floor: Vec<Patternline>,
+    floor: Vec<PatternLine>,
     patterns: Patterns,
 }
 impl Default for Board {
@@ -88,6 +119,7 @@ impl Default for Board {
 pub struct Game {
     turn: u8,
     player: u8,
+    box_top: Bag,
     bag: Bag,
     market: Market,
     factories: Vec<Factory>,
@@ -114,6 +146,7 @@ impl Game {
         let game = Game {
             turn: 0,
             player: 0,
+            box_top: Bag::default(),
             bag: Bag::default(),
             market: Market::default(),
             factories: factories,
@@ -121,4 +154,13 @@ impl Game {
         };
         Ok(game)
     }
+    pub fn fill(&mut self) -> Result<(), &'static str> {
+        for factory in &self.factories {
+            if factory.len() != 0 {
+                return Err("Cannot fill, factories are not empty")
+            };
+        };
+        Ok(())
+    }
+    // pub fn shop(&mut self, )
 }

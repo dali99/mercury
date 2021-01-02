@@ -3,8 +3,8 @@ use azul::Game;
 
 fn main() -> Result<(), &'static str>{
 
-    let game = Game::new(2)?;
+    let mut game = Game::new(2)?;
     println!("{:#?}", game);
-
+    game.fill()?;
     Ok(())
 }
