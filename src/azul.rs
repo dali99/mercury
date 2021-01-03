@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut};
 use rand::prelude::*;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Tile {
     Start,
     Blue,
@@ -60,20 +60,21 @@ impl From<Vec<Tile>> for Bag {
 
 
 #[derive(Default, Debug, Clone)]
-struct Factory ([Option<Tile>; 4]);
+struct Factory (Vec<Tile>);
 
 impl Deref for Factory {
-    type Target = [Option<Tile>; 4];
+    type Target = Vec<Tile>;
 
-    fn deref(&self) -> &[Option<Tile>; 4] {
+    fn deref(&self) -> &Vec<Tile> {
         &self.0
     }
 }
 impl DerefMut for Factory {
-    fn deref_mut(&mut self) -> &mut [Option<Tile>; 4] {
+    fn deref_mut(&mut self) -> &mut Vec<Tile> {
         &mut self.0
     }
 }
+
 
 
 #[derive(Debug, Clone)]
@@ -99,13 +100,7 @@ impl DerefMut for Market {
     }
 }
 
-type Patterns = (
-    [Option<Tile>; 1],
-    [Option<Tile>; 2],
-    [Option<Tile>; 3],
-    [Option<Tile>; 4],
-    [Option<Tile>; 5]
-);
+type Patterns = [Vec<Tile>; 5];
 
 type Row  = [bool; 5];
 type Wall = [Row;  5];
@@ -166,11 +161,9 @@ impl Game {
             boards: boards
         };
 
-        game.fill()?;
-
         Ok(game)
     }
-    fn fill(&mut self) -> Result<(), &'static str> {
+    pub fn fill(&mut self) -> Result<(), &'static str> {
         for factory in &self.factories {
             if factory.len() != 0 {
                 return Err("Cannot fill, factories are not empty")
@@ -187,7 +180,7 @@ impl Game {
                 else {
                     let tile_i = (random::<f32>() * self.bag.len() as f32).floor() as usize;
                     let tile = self.bag.remove(tile_i);
-                    factory[i] = Some(tile);
+                    factory.push(tile);
                 }
             }
         };
@@ -201,20 +194,57 @@ impl Game {
 
         let mut game = self.clone();
 
+        let board =  &mut game.boards[self.player];
+
         let old_factory = &self.factories[game_move.0];
-        let new_factory = &game.factories[game_move.0];
+        let new_factory = &mut game.factories[game_move.0];
 
         let sel_tile = game_move.1;
-        let mut hand = old_factory.clone();
-        hand.to_vec();
+        let mut hand = old_factory.to_vec();
         hand.retain(|x| *x == sel_tile);
         if hand.len() == 0 {
             return Err("That tile is not in that factory")
         }
 
-        let target = &mut game.boards[self.player].patterns[game_move.2];
-        if target.first().is_some() || *target.first().unwrap() != sel_tile {
-            return Err("You cannot place that tile on that pattern-line")
+        new_factory.retain(|x| *x != sel_tile);
+        game.market.append(new_factory);
+
+        if game_move.2 == 0 {
+            board.floor.append(&mut hand);
+            return Ok(game)
+        };
+
+        let target = match game_move.2 {
+            0 => &mut board.floor,
+            1..=5 =>&mut board.patterns
+                .split_at_mut(game_move.2 - 1).1
+                .split_at_mut(game_move.2).0
+                .first().unwrap_or(return Err("something went wrong while borrowing the target")),
+            _ => return Err("That's not a valid pattern line")
+        };
+
+        if target.first() != Some(&sel_tile) {
+            return Err("You cannot place that tile on that pattern-line, because there are already other tiles with a different color there")
+        }
+
+        if target.len() == game_move.2 {
+            return Err("That line is full!")
+        }
+
+        let empty = game_move.2 - target.len();
+        if hand.len() <= empty {
+            target.append(&mut hand);
+        }
+        else {
+            for tile in hand.drain(..) {
+                let empty = game_move.2 - &target.len();
+                if empty >= 1 {
+                    target.push(tile);
+                }
+                else {
+                    board.floor.push(tile)
+                }
+            }
         }
 
         game.turn += 1;
@@ -222,4 +252,18 @@ impl Game {
 
         Ok(game)
     }
+}
+
+
+// Tests
+
+#[test]
+fn bag() {
+    let game = Game::new(2).unwrap();
+    let bag = game.bag;
+    assert_eq!(bag.len(), 100);
+
+    let mut reds = bag.clone();
+    reds.retain(|x| *x == Tile::Red);
+    assert_eq!(reds.len(), 20);
 }
