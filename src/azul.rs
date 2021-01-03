@@ -215,7 +215,6 @@ impl Game {
         };
 
         let target = match game_move.2 {
-            0 => &mut board.floor,
             1..=5 =>&mut board.patterns
                 .split_at_mut(game_move.2 - 1).1
                 .split_at_mut(game_move.2).0
