@@ -12,6 +12,7 @@ pub enum Tile {
 }
 
 // factory, color, pattern line
+#[derive(Debug, Clone, Copy)]
 pub struct GameMove (pub usize, pub Tile, pub usize);
 
 #[derive(Debug, Clone)]
@@ -112,6 +113,102 @@ struct Board {
     floor: Vec<Tile>,
     patterns: Patterns,
 }
+impl Board {
+    fn wall_index(color: Tile, row: usize) -> Result<usize, &'static str> {
+        match row {
+            0 => {
+                match color {
+                    Tile::Blue => Ok(0),
+                    Tile::Yellow => Ok(1),
+                    Tile::Red => Ok(2),
+                    Tile::Black => Ok(3),
+                    Tile::Teal => Ok(4),
+                    _ => return Err("Not a valid tile on the wall")
+                }
+            },
+            1 => {
+                match color {
+                    Tile::Blue => Ok(1),
+                    Tile::Yellow => Ok(2),
+                    Tile::Red => Ok(3),
+                    Tile::Black => Ok(4),
+                    Tile::Teal => Ok(0),
+                    _ => return Err("Not a valid tile on the wall")
+                }
+            },
+            2 => {
+                match color {
+                    Tile::Blue => Ok(2),
+                    Tile::Yellow => Ok(3),
+                    Tile::Red => Ok(4),
+                    Tile::Black => Ok(0),
+                    Tile::Teal => Ok(1),
+                    _ => return Err("Not a valid tile on the wall")
+                }
+            },
+            3 => {
+                match color {
+                    Tile::Blue => Ok(3),
+                    Tile::Yellow => Ok(4),
+                    Tile::Red => Ok(0),
+                    Tile::Black => Ok(1),
+                    Tile::Teal => Ok(2),
+                    _ => return Err("Not a valid tile on the wall")
+                }
+            },
+            4 => {
+                match color {
+                    Tile::Blue => Ok(4),
+                    Tile::Yellow => Ok(0),
+                    Tile::Red => Ok(1),
+                    Tile::Black => Ok(2),
+                    Tile::Teal => Ok(3),
+                    _ => return Err("Not a valid tile on the wall")
+                }
+            },
+            _ => return Err("Not a valid row on the wall")
+        }
+    }
+    fn connected(&self, coordinate: (usize, usize)) -> u8 {
+        let wall = self.wall;
+
+        let mut sum = 0;
+        let mut active = false;
+
+        let mut count = 0;
+        for i in 0..5 {
+            if active == true && wall[coordinate.0][i] == false {
+                break;
+            } else if wall[coordinate.0][i] == false {
+                count = 0;
+            } else if (coordinate.0, i) == coordinate {
+                active = true;
+                count += 1;
+            } else {
+                count += 1;
+            }
+        }
+        sum += count;
+
+        let mut active = false;
+        let mut count = 0;
+        for i in 0..5 {
+            if active == true && wall[i][coordinate.1] == false {
+                break;
+            } else if wall[i][coordinate.1] == false {
+                count = 0;
+            } else if (i, coordinate.1) == coordinate {
+                active = true;
+                count += 1;
+            } else {
+                count += 1;
+            }
+        }
+        sum += count;
+
+        return sum
+    }
+}
 impl Default for Board {
     fn default() -> Self {
         Board {
@@ -186,8 +283,34 @@ impl Game {
         };
         Ok(())
     }
-    pub fn do_move(&self, game_move: GameMove) -> Result<Game, &'static str> {
+    fn score(&mut self) -> Result<(), &'static str> {
+        for board in &mut self.boards {
+            for row in 0..4 {
+                if board.patterns[row].len() == (row + 1) {
+                    let color = board.patterns[row].remove(0);
+                    let index = Board::wall_index(color, row)?;
+                    board.wall[row][index] = true;
+                    board.score += board.connected((row, index));
 
+                    self.box_top.append(&mut board.patterns[row])
+                }
+            }
+            let negative = match board.floor.len() {
+                0 => 0,
+                1 => 1,
+                2 => 2,
+                3 => 4,
+                4 => 6,
+                5 => 8,
+                6 => 11,
+                _ => 14
+            };
+            board.score -= negative;
+        }
+        Ok(())
+    }
+    pub fn do_move(&self, game_move: GameMove) -> Result<Game, &'static str> {
+        
         if game_move.1 == Tile::Start {
             return Err("You can't take the start tile alone")
         }
@@ -199,78 +322,121 @@ impl Game {
         match game_move {
             GameMove(_, Tile::Start, _) => return Err("You can't take the start tile specifically"),
             GameMove(0, _, 0) => {
-                let mut hand = self.market.deref().clone();
-                hand.retain(|&x| x == Tile::Start || x == game_move.1);
-                game.market.retain(|&x| x != Tile::Start || x != game_move.1);
-                board.floor.append(&mut hand)
+                if self.market.contains(&game_move.1) {
+                    let mut hand = self.market.deref().clone();
+                    hand.retain(|&x| x == Tile::Start || x == game_move.1);
+                    game.market.retain(|&x| x != Tile::Start || x != game_move.1);
+                    
+                    board.floor.append(&mut hand)
+                }
+                else {
+                    return Err("Market does not contain selected tile")
+                }
+            },
+            GameMove(0, _, 1..=9) => {
+                if self.market.len() == 0 {
+                    return Err("Market is empty");
+                }
+                else if self.market.contains(&game_move.1) {
+                    let target = &mut board.patterns[game_move.2 - 1];
+                    let empty = game_move.2 - target.len();
+
+                    if empty == 0 {
+                        return Err("That pattern is full")
+                    }
+
+                    let mut hand = self.market.deref().clone();
+                    hand.retain(|&x| x == Tile::Start || x == game_move.1);
+                    game.market.retain(|&x| x != Tile::Start || x != game_move.1);
+
+                    for tile in hand.drain(..) {
+                        let empty = game_move.2 - &target.len();
+                        if tile == Tile::Start {
+                            board.floor.push(tile);
+                        }
+                        else {
+                            if empty >= 1 {
+                                target.push(tile);
+                            }
+                            else {
+                                board.floor.push(tile)
+                            }
+                        }
+                    }
+                }
+                else {
+                    return Err("Market does not contain selected tile")
+                }
+            },
+            GameMove(1..=9, _, _) => {
+                let old_factory = &self.factories[game_move.0 - 1];
+                if old_factory.contains(&game_move.1) {
+                    
+                    let mut new_factory = &mut game.factories[game_move.0 - 1];
+    
+                    let mut hand = old_factory.deref().clone();
+    
+                    hand.retain(|&x| x == game_move.1);
+                    new_factory.retain(|&x| x != game_move.1);
+
+                    game.market.append(&mut new_factory);
+
+                    match game_move.2 {
+                        0 => {
+                            board.floor.append(&mut hand)
+                        },
+                        1..=9 => {
+                            let target = &mut board.patterns[game_move.2 - 1];
+                            let empty = game_move.2 - target.len();
+                            if hand.len() <= empty {
+                                target.append(&mut hand);
+                            }
+                            else if empty != 0 {
+                                for tile in hand.drain(..) {
+                                    let empty = game_move.2 - &target.len();
+                                    if empty >= 1 {
+                                        target.push(tile);
+                                    }
+                                    else {
+                                        board.floor.push(tile)
+                                    }
+                                }
+                            }
+                            else {
+                                return Err("That pattern line is full")
+                            }
+                        },
+                        _ => return Err("Not a valid destination")
+                    }
+                }
+                else {
+                    return Err("That tile is not in that factory")
+                }
             },
             GameMove(_,_,_) => return Err("Not a valid move")
         }
 
-        let old_factory = match game_move.0 {
-            0 => self.market.deref(),
-            1..=9 => {
-                if game_move.0 > self.factories.len() {
-                    return Err("No factory with that indice")
-                }
-                self.factories[game_move.0 - 1].deref()
-            },
-            _ => return Err("Not a valid place to take tiles from")
-        };
-        let new_factory = match game_move.0 {
-            0 => game.market.deref_mut(),
-            1..=9 => game.factories[game_move.0 - 1].deref_mut(),
-            _ => return Err("Not a valid place to take tiles from (new)")
-        };
-
-        let sel_tile = game_move.1;
-        let mut hand = old_factory.to_vec();
-        hand.retain(|x| *x == sel_tile);
-        if hand.len() == 0 {
-            return Err("That tile is not in that factory")
+        let mut empty = true;
+        for factory in &game.factories {
+            if factory.len() != 0 {
+                empty = false;
+                break;
+            }
         }
-
-        new_factory.retain(|x| *x != sel_tile);
-        game.market.append(new_factory);
-
-        if game_move.2 == 0 {
-            board.floor.append(&mut hand);
-            return Ok(game)
-        };
-
-        let target: &mut Vec<Tile> = match game_move.2 {
-            1..=5 => &mut board.patterns[game_move.2 - 1],
-            _ => return Err("That's not a valid pattern line")
-        };
-
-        println!("{:#?}", target);
-
-        if target.first() != None && target.first() != Some(&sel_tile) {
-            return Err("You cannot place that tile on that pattern-line, because there are already other tiles with a different color there")
-        }
-
-        if target.len() == game_move.2 {
-            return Err("That line is full!")
-        }
-
-        let empty = game_move.2 - target.len();
-        if hand.len() <= empty {
-            target.append(&mut hand);
-        }
-        else {
-            for tile in hand.drain(..) {
-                let empty = game_move.2 - &target.len();
-                if empty >= 1 {
-                    target.push(tile);
-                }
-                else {
-                    board.floor.push(tile)
-                }
+        if empty == true {
+            if game.market.len() != 0 {
+                empty = false;
             }
         }
 
+        if empty == true {
+            game.score()?;
+        }
+        else {
+            game.player = (game.player + 1) % self.boards.len();
+        }
+
         game.turn += 1;
-        game.player = (game.player + 1) % self.boards.len();
 
         Ok(game)
     }
@@ -288,4 +454,22 @@ fn bag() {
     let mut reds = bag.clone();
     reds.retain(|x| *x == Tile::Red);
     assert_eq!(reds.len(), 20);
+}
+
+#[test]
+fn connected() -> Result<(), String> {
+    let mut board = Board::default();
+    board.wall[0] = [false, false, false, false, false];
+    board.wall[1] = [true,  false, true,  false, false];
+    board.wall[2] = [true,  false, true,  false, false];
+    board.wall[3] = [true,  false, false, false, false];
+    board.wall[4] = [true,  true,  true,  false, false];
+
+    let coordinate = (4 as usize, Board::wall_index(Tile::Yellow, 4)?);
+    assert_eq!(coordinate, (4,0));
+
+    let score = board.connected(coordinate);
+
+    assert_eq!(score, 7);
+    Ok(())
 }

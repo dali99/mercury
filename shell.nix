@@ -1,6 +1,6 @@
 let
   moz_overlay = import (builtins.fetchTarball https://github.com/mozilla/nixpkgs-mozilla/archive/master.tar.gz);
-  nixpkgs = import <nixpkgs> { overlays = [ moz_overlay ]; };
+  nixpkgs = import <nixos-unstable> { overlays = [ moz_overlay ]; };
   rustNightlyChannel = (nixpkgs.rustChannelOf { date = "2020-03-19"; channel = "nightly"; }).rust.override {
     extensions = [
 			"rust-src"
@@ -23,5 +23,12 @@ with nixpkgs;
     name = "moz_overlay_shell";
     buildInputs = [
       rustStableChannel
+      (vscode-with-extensions.override {
+        vscodeExtensions = with vscode-extensions; [
+          bbenoist.Nix
+          vadimcn.vscode-lldb
+          matklad.rust-analyzer
+        ];
+      })
     ];
   }
