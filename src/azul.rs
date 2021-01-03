@@ -151,7 +151,7 @@ impl Game {
             boards.push(Board::default());
         }
 
-        let mut game = Game {
+        let game = Game {
             turn: 0,
             player: 0,
             box_top: Vec::<Tile>::with_capacity(100).into(),
@@ -170,7 +170,7 @@ impl Game {
             };
         };
         for factory in &mut self.factories {
-            for i in 0..4 {
+            for _ in 0..4 {
                 if self.bag.len() == 0 && self.box_top.len() > 0 {
                     self.bag.append(&mut self.box_top);
                 }
@@ -196,8 +196,32 @@ impl Game {
 
         let board =  &mut game.boards[self.player];
 
-        let old_factory = &self.factories[game_move.0];
-        let new_factory = &mut game.factories[game_move.0];
+        match game_move {
+            GameMove(_, Tile::Start, _) => return Err("You can't take the start tile specifically"),
+            GameMove(0, _, 0) => {
+                let mut hand = self.market.deref().clone();
+                hand.retain(|&x| x == Tile::Start || x == game_move.1);
+                game.market.retain(|&x| x != Tile::Start || x != game_move.1);
+                board.floor.append(&mut hand)
+            },
+            GameMove(_,_,_) => return Err("Not a valid move")
+        }
+
+        let old_factory = match game_move.0 {
+            0 => self.market.deref(),
+            1..=9 => {
+                if game_move.0 > self.factories.len() {
+                    return Err("No factory with that indice")
+                }
+                self.factories[game_move.0 - 1].deref()
+            },
+            _ => return Err("Not a valid place to take tiles from")
+        };
+        let new_factory = match game_move.0 {
+            0 => game.market.deref_mut(),
+            1..=9 => game.factories[game_move.0 - 1].deref_mut(),
+            _ => return Err("Not a valid place to take tiles from (new)")
+        };
 
         let sel_tile = game_move.1;
         let mut hand = old_factory.to_vec();
@@ -214,7 +238,6 @@ impl Game {
             return Ok(game)
         };
 
-        // This is a workaround for borrowing _only_that board pattern
         let target: &mut Vec<Tile> = match game_move.2 {
             1..=5 => &mut board.patterns[game_move.2 - 1],
             _ => return Err("That's not a valid pattern line")
