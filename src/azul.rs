@@ -214,15 +214,15 @@ impl Game {
             return Ok(game)
         };
 
-        let target = match game_move.2 {
-            1..=5 =>&mut board.patterns
-                .split_at_mut(game_move.2 - 1).1
-                .split_at_mut(game_move.2).0
-                .first().unwrap_or(return Err("something went wrong while borrowing the target")),
+        // This is a workaround for borrowing _only_that board pattern
+        let target: &mut Vec<Tile> = match game_move.2 {
+            1..=5 => &mut board.patterns[game_move.2 - 1],
             _ => return Err("That's not a valid pattern line")
         };
 
-        if target.first() != Some(&sel_tile) {
+        println!("{:#?}", target);
+
+        if target.first() != None && target.first() != Some(&sel_tile) {
             return Err("You cannot place that tile on that pattern-line, because there are already other tiles with a different color there")
         }
 
