@@ -16,7 +16,7 @@ pub enum Tile {
 pub struct GameMove (pub usize, pub Tile, pub usize);
 impl Default for GameMove {
     fn default() -> Self {
-        GameMove(0, Tile::Blue, 0)
+        GameMove(0, Tile::Blue, 1)
     }
 }
 
@@ -348,6 +348,9 @@ impl Game {
                 }
                 else if self.market.contains(&game_move.1) {
                     let target = &mut board.patterns[game_move.2 - 1];
+                    if target.first().is_some() && target[0] != game_move.1 {
+                        return Err("That pattern line already contains a different color")
+                    }
                     let empty = game_move.2 - target.len();
 
                     if empty == 0 {
@@ -400,6 +403,9 @@ impl Game {
                         },
                         1..=9 => {
                             let target = &mut board.patterns[game_move.2 - 1];
+                            if target.first().is_some() && target[0] != game_move.1 {
+                                return Err("That pattern line already contains a different color")
+                            }
                             let empty = game_move.2 - target.len();
                             if hand.len() <= empty {
                                 target.append(&mut hand);

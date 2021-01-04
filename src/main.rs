@@ -1,24 +1,31 @@
 mod azul;
 use azul::*;
 
-fn main() -> Result<(), &'static str>{
+fn main() -> Result<(), &'static str> {
+    for _ in 0..10000 {
+        run()?;
+    }
+    Ok(())
+}
+
+fn run() -> Result<(), &'static str> {
 
     let mut game = Game::new(2)?;
     game.fill()?;
 
     let mut all_err = false;
     while !all_err {
-        println!("{:#?}", game);
+        //println!("{:#?}", game);
         all_err = true;
         let mut game_move:Option<GameMove> = Some(GameMove::default());
         while let Some(mut i) = game_move {
             match game.do_move(i) {
                 Err(e) => {
-                    println!("{:?}: {}", i, e);
+                    //println!("{:?}: {}", i, e);
                     game_move = i.next();
                 },
                 Ok(g) => {
-                    println!("{:?}", i);
+                    //println!("{:?}", i);
                     game = g;
                     all_err = false;
                     break;
@@ -26,9 +33,6 @@ fn main() -> Result<(), &'static str>{
             }
         }
     }
-
-    let game2 = game.do_move(GameMove(1, Tile::Red, 1))?;
-    println!("{:#?}", game2);
     Ok(())
 }
 
@@ -60,14 +64,15 @@ impl Iterator for GameMove {
         };
         let tile = match _tile {
             None => {
-                pattern += 1;
+                match pattern {
+                    6 => pattern = 0,
+                    0 => return None,
+                    _ => pattern = pattern + 1
+                };
                 Tile::Blue
             },
             Some(x) => x
         };
-        if pattern > 6 {
-            return None
-        }
 
         Some(GameMove(factory, tile, pattern))
     }
