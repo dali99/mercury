@@ -31,5 +31,6 @@ with nixpkgs;
         ];
       })
       coz
+      cargo-flamegraph
     ];
   }
