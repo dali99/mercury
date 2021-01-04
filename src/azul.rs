@@ -238,7 +238,7 @@ pub struct Game {
     boards: Vec<Board>
 }
 impl Game {
-    pub fn new(players: usize, random: StdRng) -> Result<Self, &'static str> {
+    pub fn new(players: usize, random: StdRng) -> Result<Game, &'static str> {
         coz::scope!("create game");
         let n_factories = match players {
             2 => 5,
@@ -320,23 +320,17 @@ impl Game {
         }
         Ok(())
     }
-    pub fn do_move(&self, game_move: GameMove) -> Result<Game, &'static str> {
+    pub fn do_move(&mut self, game_move: GameMove) -> Result<(), &'static str> {
         coz::scope!("do a move");
-        if game_move.1 == Tile::Start {
-            return Err("You can't take the start tile alone")
-        }
 
-        let mut game = self.clone();
-
-        let board =  &mut game.boards[self.player];
-
+        let board =  &mut self.boards[self.player];
         match game_move {
             GameMove(_, Tile::Start, _) => return Err("You can't take the start tile specifically"),
             GameMove(0, _, 0) => {
                 if self.market.contains(&game_move.1) {
                     let mut hand = self.market.deref().clone();
                     hand.retain(|&x| x == Tile::Start || x == game_move.1);
-                    game.market.retain(|x| *x != Tile::Start && *x != game_move.1);
+                    self.market.retain(|x| *x != Tile::Start && *x != game_move.1);
                     
                     board.floor.append(&mut hand)
                 }
@@ -361,7 +355,7 @@ impl Game {
 
                     let mut hand = self.market.deref().clone();
                     hand.retain(|&x| x == Tile::Start || x == game_move.1);
-                    game.market.retain(|x| *x != Tile::Start && *x != game_move.1);
+                    self.market.retain(|x| *x != Tile::Start && *x != game_move.1);
 
                     for tile in hand.drain(..) {
                         let empty = game_move.2 - &target.len();
@@ -383,21 +377,19 @@ impl Game {
                 }
             },
             GameMove(1..=9, _, _) => {
+                let board =  &mut self.boards[self.player];
                 if game_move.0 > self.factories.len() - 1 {
                     return Err("That factory is out of bounds");
                 }
 
-                let old_factory = &self.factories[game_move.0 - 1];
-                if old_factory.contains(&game_move.1) {
-                    
-                    let mut new_factory = &mut game.factories[game_move.0 - 1];
-    
-                    let mut hand = old_factory.deref().clone();
+                let factory = &mut self.factories[game_move.0 - 1];
+                if factory.contains(&game_move.1) {  
+                    let mut hand = factory.deref().clone();
     
                     hand.retain(|&x| x == game_move.1);
-                    new_factory.retain(|&x| x != game_move.1);
+                    factory.retain(|&x| x != game_move.1);
 
-                    game.market.append(&mut new_factory);
+                    self.market.append(factory);
 
                     match game_move.2 {
                         0 => {
@@ -414,7 +406,7 @@ impl Game {
                             }
                             else if empty != 0 {
                                 for tile in hand.drain(..) {
-                                    let empty = game_move.2 - &target.len();
+                                    let empty = game_move.2 - target.len();
                                     if empty >= 1 {
                                         target.push(tile);
                                     }
@@ -438,28 +430,28 @@ impl Game {
         }
 
         let mut empty = true;
-        for factory in &game.factories {
+        for factory in &mut self.factories {
             if factory.len() != 0 {
                 empty = false;
                 break;
             }
         }
         if empty == true {
-            if game.market.len() != 0 {
+            if self.market.len() != 0 {
                 empty = false;
             }
         }
 
         if empty == true {
-            game.score()?;
+            self.score()?;
         }
         else {
-            game.player = (game.player + 1) % self.boards.len();
+            self.player = (self.player + 1) % self.boards.len();
         }
 
-        game.turn += 1;
+        self.turn += 1;
 
-        Ok(game)
+        Ok(())
     }
 }
 
@@ -468,7 +460,7 @@ impl Game {
 
 #[test]
 fn bag() {
-    let game = Game::new(2).unwrap();
+    let game = Game::new(2, StdRng::seed_from_u64(123)).unwrap();
     let bag = game.bag;
     assert_eq!(bag.len(), 100);
 

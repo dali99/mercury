@@ -4,7 +4,7 @@ use rand::prelude::*;
 
 fn main() -> Result<(), &'static str> {
     let mut g_rng = StdRng::seed_from_u64(42);
-    for _ in 0..10000 {
+    for _ in 0..500000 {
         let rng = match StdRng::from_rng(&mut g_rng) {
             Ok(r) => r,
             Err(e) => {
@@ -33,9 +33,7 @@ fn run(rng: StdRng) -> Result<(), &'static str> {
                     //println!("{:?}: {}", i, e);
                     game_move = i.next();
                 },
-                Ok(g) => {
-                    //println!("{:?}", i);
-                    game = g;
+                Ok(_) => {
                     all_err = false;
                     break;
                 }
