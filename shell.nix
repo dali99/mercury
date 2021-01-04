@@ -30,5 +30,6 @@ with nixpkgs;
           matklad.rust-analyzer
         ];
       })
+      coz
     ];
   }

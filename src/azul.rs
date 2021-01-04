@@ -14,6 +14,11 @@ pub enum Tile {
 // factory, color, pattern line
 #[derive(Debug, Clone, Copy)]
 pub struct GameMove (pub usize, pub Tile, pub usize);
+impl Default for GameMove {
+    fn default() -> Self {
+        GameMove(0, Tile::Blue, 0)
+    }
+}
 
 #[derive(Debug, Clone)]
 struct Bag (Vec<Tile>);
@@ -170,6 +175,7 @@ impl Board {
         }
     }
     fn connected(&self, coordinate: (usize, usize)) -> u8 {
+        coz::scope!("connected tiles");
         let wall = self.wall;
 
         let mut sum = 0;
@@ -222,7 +228,7 @@ impl Default for Board {
 
 #[derive(Default, Debug, Clone)]
 pub struct Game {
-    turn: u8,
+    turn: u32,
     player: usize,
     box_top: Bag,
     bag: Bag,
@@ -232,6 +238,7 @@ pub struct Game {
 }
 impl Game {
     pub fn new(players: usize) -> Result<Self, &'static str> {
+        coz::scope!("create game");
         let n_factories = match players {
             2 => 5,
             3 => 7,
@@ -261,6 +268,7 @@ impl Game {
         Ok(game)
     }
     pub fn fill(&mut self) -> Result<(), &'static str> {
+        coz::scope!("fill factories from bag");
         for factory in &self.factories {
             if factory.len() != 0 {
                 return Err("Cannot fill, factories are not empty")
@@ -284,6 +292,7 @@ impl Game {
         Ok(())
     }
     fn score(&mut self) -> Result<(), &'static str> {
+        coz::scope!("score boards");
         for board in &mut self.boards {
             for row in 0..4 {
                 if board.patterns[row].len() == (row + 1) {
@@ -310,7 +319,7 @@ impl Game {
         Ok(())
     }
     pub fn do_move(&self, game_move: GameMove) -> Result<Game, &'static str> {
-        
+        coz::scope!("do a move");
         if game_move.1 == Tile::Start {
             return Err("You can't take the start tile alone")
         }
@@ -325,7 +334,7 @@ impl Game {
                 if self.market.contains(&game_move.1) {
                     let mut hand = self.market.deref().clone();
                     hand.retain(|&x| x == Tile::Start || x == game_move.1);
-                    game.market.retain(|&x| x != Tile::Start || x != game_move.1);
+                    game.market.retain(|x| *x != Tile::Start && *x != game_move.1);
                     
                     board.floor.append(&mut hand)
                 }
@@ -333,7 +342,7 @@ impl Game {
                     return Err("Market does not contain selected tile")
                 }
             },
-            GameMove(0, _, 1..=9) => {
+            GameMove(0, _, 1..=6) => {
                 if self.market.len() == 0 {
                     return Err("Market is empty");
                 }
@@ -347,7 +356,7 @@ impl Game {
 
                     let mut hand = self.market.deref().clone();
                     hand.retain(|&x| x == Tile::Start || x == game_move.1);
-                    game.market.retain(|&x| x != Tile::Start || x != game_move.1);
+                    game.market.retain(|x| *x != Tile::Start && *x != game_move.1);
 
                     for tile in hand.drain(..) {
                         let empty = game_move.2 - &target.len();
@@ -369,6 +378,10 @@ impl Game {
                 }
             },
             GameMove(1..=9, _, _) => {
+                if game_move.0 > self.factories.len() - 1 {
+                    return Err("That factory is out of bounds");
+                }
+
                 let old_factory = &self.factories[game_move.0 - 1];
                 if old_factory.contains(&game_move.1) {
                     
