@@ -226,8 +226,9 @@ impl Default for Board {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct Game {
+    random: StdRng,
     turn: u32,
     player: usize,
     box_top: Bag,
@@ -237,7 +238,7 @@ pub struct Game {
     boards: Vec<Board>
 }
 impl Game {
-    pub fn new(players: usize) -> Result<Self, &'static str> {
+    pub fn new(players: usize, random: StdRng) -> Result<Self, &'static str> {
         coz::scope!("create game");
         let n_factories = match players {
             2 => 5,
@@ -256,6 +257,7 @@ impl Game {
         }
 
         let game = Game {
+            random: random,
             turn: 0,
             player: 0,
             box_top: Vec::<Tile>::with_capacity(100).into(),
@@ -283,7 +285,7 @@ impl Game {
                     return Ok(())
                 }
                 else {
-                    let tile_i = (random::<f32>() * self.bag.len() as f32).floor() as usize;
+                    let tile_i:usize = self.random.gen_range(0..self.bag.len());
                     let tile = self.bag.remove(tile_i);
                     factory.push(tile);
                 }

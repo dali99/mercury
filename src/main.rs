@@ -1,16 +1,25 @@
 mod azul;
 use azul::*;
+use rand::prelude::*;
 
 fn main() -> Result<(), &'static str> {
+    let mut g_rng = StdRng::seed_from_u64(42);
     for _ in 0..10000 {
-        run()?;
+        let rng = match StdRng::from_rng(&mut g_rng) {
+            Ok(r) => r,
+            Err(e) => {
+                println!("error! {:?}", e);
+                break;
+            }
+        };
+        run(rng)?;
     }
     Ok(())
 }
 
-fn run() -> Result<(), &'static str> {
+fn run(rng: StdRng) -> Result<(), &'static str> {
 
-    let mut game = Game::new(2)?;
+    let mut game = Game::new(2, rng)?;
     game.fill()?;
 
     let mut all_err = false;
