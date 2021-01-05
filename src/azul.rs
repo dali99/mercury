@@ -2,6 +2,10 @@ use std::ops::{Deref, DerefMut};
 use rand::prelude::*;
 use smallvec::{SmallVec, smallvec};
 
+use alloc_counter::{AllocCounterSystem, no_alloc};
+#[global_allocator]
+static A: AllocCounterSystem = AllocCounterSystem;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Tile {
     Start,
@@ -109,7 +113,7 @@ impl Iterator for GameMoveIter {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 struct Bag (SmallVec<[Tile; 128]>);
 impl Default for Bag {
     fn default() -> Self {
@@ -154,9 +158,14 @@ impl From<SmallVec<[Tile; 128]>> for Bag {
 }
 
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug)]
 struct Factory (SmallVec<[Tile; 4]>);
-
+impl Clone for Factory {
+    #[no_alloc]
+    fn clone(&self) -> Self {
+        Factory(self.0.clone())
+    }
+}
 impl Deref for Factory {
     type Target = SmallVec<[Tile; 4]>;
 
@@ -263,7 +272,6 @@ impl Board {
         }
     }
     fn connected(&self, coordinate: (usize, usize)) -> u8 {
-        coz::scope!("connected tiles");
         let wall = self.wall;
 
         let mut sum = 0;
@@ -312,24 +320,23 @@ pub struct Game {
     box_top: Bag,
     bag: Bag,
     market: Market,
-    factories: Vec<Factory>,
-    boards: Vec<Board>
+    factories: SmallVec<[Factory; 5]>,  // TODO set to 9?
+    boards: SmallVec<[Board; 2]>        // TODO set to 4?
 }
 impl Game {
     pub fn new(players: usize, random: StdRng) -> Result<Game, &'static str> {
-        coz::scope!("create game");
         let n_factories = match players {
             2 => 5,
             3 => 7,
             4 => 9,
             _ => return Err("Not a valid amount of players")
         };
-        let mut factories = Vec::<Factory>::with_capacity(n_factories);
+        let mut factories = SmallVec::<[Factory; 5]>::new();
         for _ in 0..n_factories {
             factories.push(Factory::default())
         }
 
-        let mut boards = Vec::<Board>::with_capacity(players);
+        let mut boards = SmallVec::<[Board; 2]>::new();
         for _ in 0..players {
             boards.push(Board::default());
         }
@@ -348,7 +355,6 @@ impl Game {
         Ok(game)
     }
     pub fn fill(&mut self) -> Result<(), &'static str> {
-        coz::scope!("fill factories from bag");
         for factory in &self.factories {
             if factory.len() != 0 {
                 return Err("Cannot fill, factories are not empty")
@@ -372,7 +378,6 @@ impl Game {
         Ok(())
     }
     fn score(&mut self) -> Result<(), &'static str> {
-        coz::scope!("score boards");
         for board in &mut self.boards {
             for row in 0..4 {
                 if board.patterns[row].len() == (row + 1) {
@@ -398,9 +403,8 @@ impl Game {
         }
         Ok(())
     }
+    // #[no_alloc(forbid)]
     pub fn do_move(&mut self, game_move: GameMove) -> Result<(), &'static str> {
-        coz::scope!("do a move");
-
         let board =  &mut self.boards[self.player];
         match game_move {
             GameMove(_, Tile::Start, _) => return Err("You can't take the start tile specifically"),
@@ -410,7 +414,7 @@ impl Game {
                     hand.retain(|x| *x == Tile::Start || *x == game_move.1);
                     self.market.retain(|x| *x != Tile::Start && *x != game_move.1);
                     
-                    board.floor.append(&mut hand)
+                    board.floor.append(&mut hand);
                 }
                 else {
                     return Err("Market does not contain selected tile")
@@ -436,7 +440,7 @@ impl Game {
                     self.market.retain(|x| *x != Tile::Start && *x != game_move.1);
 
                     for tile in hand.drain(..) {
-                        let empty = game_move.2 - &target.len();
+                        let empty = game_move.2 - target.len();
                         if tile == Tile::Start {
                             board.floor.push(tile);
                         }

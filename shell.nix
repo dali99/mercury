@@ -32,5 +32,8 @@ with nixpkgs;
       })
       coz
       cargo-flamegraph
+      cmake
+      gcc
+      llvm_11
     ];
   }
