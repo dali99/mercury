@@ -1,5 +1,6 @@
 use std::ops::{Deref, DerefMut};
 use rand::prelude::*;
+use smallvec::{SmallVec, smallvec};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Tile {
@@ -109,10 +110,10 @@ impl Iterator for GameMoveIter {
 }
 
 #[derive(Debug, Clone)]
-struct Bag (Vec<Tile>);
+struct Bag (SmallVec<[Tile; 128]>);
 impl Default for Bag {
     fn default() -> Self {
-        let mut bag = Vec::<Tile>::with_capacity(100);
+        let mut bag = SmallVec::<[Tile; 128]>::new();
         for _ in 0..20 {
             bag.push(Tile::Blue);
         };
@@ -134,37 +135,37 @@ impl Default for Bag {
 }
 
 impl Deref for Bag {
-    type Target = Vec<Tile>;
+    type Target = SmallVec<[Tile; 128]>;
 
-    fn deref(&self) -> &Vec<Tile> {
+    fn deref(&self) -> &SmallVec<[Tile; 128]> {
         &self.0
     }
 }
 impl DerefMut for Bag {
-    fn deref_mut(&mut self) -> &mut Vec<Tile> {
+    fn deref_mut(&mut self) -> &mut SmallVec<[Tile; 128]> {
         &mut self.0
     }
 }
 
-impl From<Vec<Tile>> for Bag {
-    fn from(vector: Vec<Tile>) -> Bag {
+impl From<SmallVec<[Tile; 128]>> for Bag {
+    fn from(vector: SmallVec<[Tile; 128]>) -> Bag {
         Bag(vector)
     }
 }
 
 
 #[derive(Default, Debug, Clone)]
-struct Factory (Vec<Tile>);
+struct Factory (SmallVec<[Tile; 4]>);
 
 impl Deref for Factory {
-    type Target = Vec<Tile>;
+    type Target = SmallVec<[Tile; 4]>;
 
-    fn deref(&self) -> &Vec<Tile> {
+    fn deref(&self) -> &SmallVec<[Tile; 4]> {
         &self.0
     }
 }
 impl DerefMut for Factory {
-    fn deref_mut(&mut self) -> &mut Vec<Tile> {
+    fn deref_mut(&mut self) -> &mut SmallVec<[Tile; 4]> {
         &mut self.0
     }
 }
@@ -172,38 +173,37 @@ impl DerefMut for Factory {
 
 
 #[derive(Debug, Clone)]
-struct Market (Vec<Tile>);
-
+struct Market (SmallVec<[Tile; 28]>);
 impl Default for Market {
     fn default() -> Self {
-        let mut market = Vec::<Tile>::with_capacity(20);
+        let mut market = SmallVec::<[Tile; 28]>::new();
         market.push(Tile::Start);
         Market(market)
     }
 }
 impl Deref for Market {
-    type Target = Vec<Tile>;
+    type Target = SmallVec<[Tile; 28]>;
 
-    fn deref(&self) -> &Vec<Tile> {
+    fn deref(&self) -> &SmallVec<[Tile; 28]> {
         &self.0
     }
 }
 impl DerefMut for Market {
-    fn deref_mut(&mut self) -> &mut Vec<Tile> {
+    fn deref_mut(&mut self) -> &mut SmallVec<[Tile; 28]> {
         &mut self.0
     }
 }
 
-type Patterns = [Vec<Tile>; 5];
+type Patterns = [SmallVec<[Tile; 5]>; 5];
 
 type Row  = [bool; 5];
 type Wall = [Row;  5];
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct Board {
     score: u8,
     wall: Wall,
-    floor: Vec<Tile>,
+    floor: SmallVec<[Tile; 7]>,
     patterns: Patterns,
 }
 impl Board {
@@ -303,16 +303,6 @@ impl Board {
         return sum
     }
 }
-impl Default for Board {
-    fn default() -> Self {
-        Board {
-            score: 0,
-            wall: Wall::default(),
-            floor: Vec::default(),
-            patterns: Patterns::default()
-        }
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct Game {
@@ -348,7 +338,7 @@ impl Game {
             random: random,
             turn: 0,
             player: 0,
-            box_top: Vec::<Tile>::with_capacity(100).into(),
+            box_top: Bag(SmallVec::<[Tile; 128]>::new()),
             bag: Bag::default(),
             market: Market::default(),
             factories: factories,
@@ -416,8 +406,8 @@ impl Game {
             GameMove(_, Tile::Start, _) => return Err("You can't take the start tile specifically"),
             GameMove(0, _, 0) => {
                 if self.market.contains(&game_move.1) {
-                    let mut hand = self.market.deref().clone();
-                    hand.retain(|&x| x == Tile::Start || x == game_move.1);
+                    let mut hand= self.market.clone();
+                    hand.retain(|x| *x == Tile::Start || *x == game_move.1);
                     self.market.retain(|x| *x != Tile::Start && *x != game_move.1);
                     
                     board.floor.append(&mut hand)
@@ -442,7 +432,7 @@ impl Game {
                     }
 
                     let mut hand = self.market.deref().clone();
-                    hand.retain(|&x| x == Tile::Start || x == game_move.1);
+                    hand.retain(|x| *x == Tile::Start || *x == game_move.1);
                     self.market.retain(|x| *x != Tile::Start && *x != game_move.1);
 
                     for tile in hand.drain(..) {
@@ -472,10 +462,9 @@ impl Game {
 
                 let factory = &mut self.factories[game_move.0 - 1];
                 if factory.contains(&game_move.1) {  
-                    let mut hand = factory.deref().clone();
-    
-                    hand.retain(|&x| x == game_move.1);
-                    factory.retain(|&x| x != game_move.1);
+                    let mut hand = factory.clone();
+                    hand.retain(|x| *x == game_move.1);
+                    factory.retain(|x| *x != game_move.1);
 
                     self.market.append(factory);
 
