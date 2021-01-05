@@ -4,7 +4,7 @@ use rand::prelude::*;
 
 fn main() -> Result<(), &'static str> {
     let mut g_rng = StdRng::seed_from_u64(42);
-    for _ in 0..500000 {
+    for _ in 0..10000 {
         let rng = match StdRng::from_rng(&mut g_rng) {
             Ok(r) => r,
             Err(e) => {
@@ -27,11 +27,11 @@ fn run(rng: StdRng) -> Result<(), &'static str> {
         //println!("{:#?}", game);
         all_err = true;
         let mut game_move:Option<GameMove> = Some(GameMove::default());
-        while let Some(mut i) = game_move {
+        while let Some(i) =  game_move {
             match game.do_move(i) {
                 Err(e) => {
                     //println!("{:?}: {}", i, e);
-                    game_move = i.next();
+                    game_move = i.into_iter().next();
                 },
                 Ok(_) => {
                     all_err = false;
@@ -43,44 +43,46 @@ fn run(rng: StdRng) -> Result<(), &'static str> {
     Ok(())
 }
 
-impl Iterator for Tile {
-    type Item = Tile;
+#[test]
+fn calculate_options() -> Result<(), String> {
+    let game = complicated()?;
+    println!("{:#?}", game);
 
-    fn next(&mut self) -> Option<Tile>{
-        match *self {
-            Tile::Start => None,
-            Tile::Blue => Some(Tile::Yellow),
-            Tile::Yellow => Some(Tile::Red),
-            Tile::Red => Some(Tile::Black),
-            Tile::Black => Some(Tile::Teal),
-            Tile::Teal => None
-        }
-    }
+    println!("{}", count_options(game, 0));
+
+    Ok(())
 }
 
-impl Iterator for GameMove {
-    type Item = GameMove;
-
-    fn next(&mut self) -> Option<GameMove> {
-        let mut factory = self.0 + 1;
-        let mut _tile = Some(self.1);
-        let mut pattern = self.2;
-        if factory > 9 {
-            factory = 0;
-            _tile = _tile.unwrap().next();
+fn count_options(game: Game, depth: u8) -> u128 {
+    let mut sum = 0;
+    let i = GameMove::default();
+    let mut all_failed = true;
+    for game_move in i {
+        //println!("{:?}", game_move);
+        let mut new_game = game.clone();
+        let r = new_game.do_move(game_move);
+        match r {
+            Ok(_) => sum += {/*println!("{}", depth);*/ all_failed = false; count_options(new_game, depth + 1)},
+            Err(_) => continue
         };
-        let tile = match _tile {
-            None => {
-                match pattern {
-                    6 => pattern = 0,
-                    0 => return None,
-                    _ => pattern = pattern + 1
-                };
-                Tile::Blue
-            },
-            Some(x) => x
-        };
+    };
 
-        Some(GameMove(factory, tile, pattern))
+    if all_failed {
+        //println!("{}: ALL FAILED!", depth);
+        return 1;
     }
+
+    return sum;
+
+    /*game_move.iter_mut().map(|x| {
+        let mut new_game = game.clone();
+        let r = new_game.do_move(*x);
+        println!("{:#?}", r);
+        match r {
+            Ok(_) => count_options(new_game),
+            Err(_) => 0
+        }
+    })
+    .sum::<u128>()*/
+
 }

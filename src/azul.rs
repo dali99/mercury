@@ -11,12 +11,100 @@ pub enum Tile {
     Teal
 }
 
+impl IntoIterator for Tile {
+    type Item = Tile;
+    type IntoIter = TileIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        TileIter {
+            current: self
+        }
+    }
+}
+
+pub struct TileIter {
+    current: Tile
+}
+impl Iterator for TileIter {
+    type Item = Tile;
+
+    fn next(&mut self) -> Option<Tile>{
+        match self.current {
+            Tile::Blue => {
+                let next = Tile::Yellow;
+                self.current = next;
+                Some(next)
+            },
+            Tile::Yellow => {
+                let next = Tile::Red;
+                self.current = next;
+                Some(next)
+            },
+            Tile::Red => {
+                let next = Tile::Black;
+                self.current = next;
+                Some(next)
+            },
+            Tile::Black => {
+                let next = Tile::Teal;
+                self.current = next;
+                Some(next)
+            },
+            _ => None
+        }
+    }
+}
+
+
 // factory, color, pattern line
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GameMove (pub usize, pub Tile, pub usize);
 impl Default for GameMove {
     fn default() -> Self {
         GameMove(0, Tile::Blue, 1)
+    }
+}
+impl IntoIterator for GameMove {
+    type Item = GameMove;
+    type IntoIter = GameMoveIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        GameMoveIter {
+            current: self
+        }
+    }
+}
+
+pub struct GameMoveIter {
+    current: GameMove
+}
+
+impl Iterator for GameMoveIter {
+    type Item = GameMove;
+
+    fn next(&mut self) -> Option<GameMove> {
+        let factory = self.current.0;
+        let tile = self.current.1;
+        let pattern = self.current.2;
+
+        if factory == 9 && tile == Tile::Teal && pattern == 0 {
+            return None
+        }
+        else if factory == 9 && tile == Tile::Teal {
+            let next = GameMove(0, Tile::Blue, (pattern + 1) % 6);
+            self.current = next;
+            return Some(next)
+        }
+        else if factory == 9 {
+            let next = GameMove(0, tile.into_iter().next().unwrap(), pattern);
+            self.current = next;
+            return Some(next)
+        }
+        else {
+            let next = GameMove(factory + 1, tile, pattern);
+            self.current = next;
+            return Some(next)
+        } 
     }
 }
 
@@ -458,6 +546,21 @@ impl Game {
 
 // Tests
 
+pub fn complicated() -> Result<Game, &'static str> {
+    let mut game = Game::new(2, StdRng::seed_from_u64(1))?;
+
+    let mut tiles = Tile::Blue;
+
+    for factory in &mut game.factories {
+        for _ in 0..4 {
+            factory.push(tiles);
+            tiles = tiles.into_iter().next().unwrap_or(Tile::Blue);
+        }
+    }
+
+    Ok(game)
+}
+
 #[test]
 fn bag() {
     let game = Game::new(2, StdRng::seed_from_u64(123)).unwrap();
@@ -485,4 +588,13 @@ fn connected() -> Result<(), String> {
 
     assert_eq!(score, 7);
     Ok(())
+}
+
+#[test]
+fn game_move_iter() {
+    let i = GameMove::default();
+    println!("Original: {:?}", i);
+    assert_eq!(i.into_iter().next().unwrap(), GameMove(1, Tile::Blue, 1));
+
+    assert_eq!(i.into_iter().count(), 5)
 }
