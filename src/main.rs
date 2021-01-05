@@ -3,17 +3,11 @@ use azul::*;
 use rand::prelude::*;
 
 fn main() -> Result<(), &'static str> {
-    let mut g_rng = StdRng::seed_from_u64(42);
-    for _ in 0..1000000 {
-        let rng = match StdRng::from_rng(&mut g_rng) {
-            Ok(r) => r,
-            Err(e) => {
-                println!("error! {:?}", e);
-                break;
-            }
-        };
-        run(rng)?;
-    }
+    let rng = StdRng::seed_from_u64(42);
+    let game = Game::new(2, rng)?;
+    println!("{:#?}", game);
+    println!("{}", count_options(game, 0));
+
     Ok(())
 }
 
