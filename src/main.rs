@@ -10,23 +10,28 @@ use rand::prelude::*;
 
 
 fn main() -> Result<(), &'static str> {
-    
-    let rng = StdRng::seed_from_u64(42);
-    let mut game = Game::new(2, rng)?;
-    game.fill()?;
-    println!("{:#?}", game);
 
-    game.do_move(GameMove(1, Tile::Red, 2))?;
-    game.do_move(GameMove(4, Tile::Red, 2))?;
+    let program = 2;
 
-    game.do_move(GameMove(2, Tile::Red, 1))?;
+    return match program {
+        1 => {
+            let rng = StdRng::seed_from_u64(42);
+            let mut game = Game::new(2, rng)?;
+            game.fill()?;
+             println!("{:#?}", game);
 
-    println!("{}", count_options(game, 0, 2));
-    
+              game.do_move(GameMove(1, Tile::Red, 2))?;
+              game.do_move(GameMove(4, Tile::Red, 2))?;
 
-    // calculate_options()?;
+              game.do_move(GameMove(2, Tile::Red, 1))?;
 
-    Ok(())
+              println!("{}", count_options(game, 0, 2));
+
+              Ok(())
+        },
+        2 => calculate_options(),
+        _ => Err("Not a valid program")
+    }
 }
 
 fn run(rng: StdRng) -> Result<(), &'static str> {
