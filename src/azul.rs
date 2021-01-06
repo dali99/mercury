@@ -16,6 +16,12 @@ pub enum Tile {
     Teal
 }
 
+impl Default for Tile {
+    fn default() -> Self {
+        Tile::Blue
+    }
+}
+
 impl IntoIterator for Tile {
     type Item = Tile;
     type IntoIter = TileIter;
@@ -138,11 +144,12 @@ impl Iterator for GameMoveIter {
     }
 }
 
-#[derive(Clone, Debug)]
-struct Bag (SmallVec<[Tile; 128]>);
+#[derive(Clone, Debug, Copy)]
+struct Bag (tinyvec::ArrayVec::<[Tile; 128]>);
+
 impl Default for Bag {
     fn default() -> Self {
-        let mut bag = SmallVec::<[Tile; 128]>::new();
+        let mut bag = tinyvec::ArrayVec::<[Tile; 128]>::new();
         for _ in 0..20 {
             bag.push(Tile::Blue);
         };
@@ -164,27 +171,27 @@ impl Default for Bag {
 }
 
 impl Deref for Bag {
-    type Target = SmallVec<[Tile; 128]>;
+    type Target = tinyvec::ArrayVec<[Tile; 128]>;
 
-    fn deref(&self) -> &SmallVec<[Tile; 128]> {
+    fn deref(&self) -> &tinyvec::ArrayVec<[Tile; 128]> {
         &self.0
     }
 }
 impl DerefMut for Bag {
-    fn deref_mut(&mut self) -> &mut SmallVec<[Tile; 128]> {
+    fn deref_mut(&mut self) -> &mut tinyvec::ArrayVec<[Tile; 128]> {
         &mut self.0
     }
 }
 
-impl From<SmallVec<[Tile; 128]>> for Bag {
-    fn from(vector: SmallVec<[Tile; 128]>) -> Bag {
+impl From<tinyvec::ArrayVec<[Tile; 128]>> for Bag {
+    fn from(vector: tinyvec::ArrayVec<[Tile; 128]>) -> Bag {
         Bag(vector)
     }
 }
 
 
-#[derive(Default, Debug)]
-struct Factory (SmallVec<[Tile; 4]>);
+#[derive(Default, Debug, Copy)]
+struct Factory (tinyvec::ArrayVec<[Tile; 4]>);
 impl Clone for Factory {
     #[no_alloc]
     fn clone(&self) -> Self {
@@ -192,14 +199,14 @@ impl Clone for Factory {
     }
 }
 impl Deref for Factory {
-    type Target = SmallVec<[Tile; 4]>;
+    type Target = tinyvec::ArrayVec<[Tile; 4]>;
 
-    fn deref(&self) -> &SmallVec<[Tile; 4]> {
+    fn deref(&self) -> &tinyvec::ArrayVec<[Tile; 4]> {
         &self.0
     }
 }
 impl DerefMut for Factory {
-    fn deref_mut(&mut self) -> &mut SmallVec<[Tile; 4]> {
+    fn deref_mut(&mut self) -> &mut tinyvec::ArrayVec<[Tile; 4]> {
         &mut self.0
     }
 }
@@ -228,7 +235,7 @@ impl DerefMut for Market {
     }
 }
 
-type Patterns = [SmallVec<[Tile; 5]>; 5];
+type Patterns = [tinyvec::ArrayVec<[Tile; 5]>; 5];
 
 type Row  = [bool; 5];
 type Wall = [Row;  5];
@@ -339,7 +346,6 @@ impl Board {
 
 #[derive(Debug, Clone)]
 pub struct Game {
-    random: StdRng,
     turn: u32,
     player: usize,
     box_top: Bag,
@@ -349,7 +355,7 @@ pub struct Game {
     boards: SmallVec<[Board; 2]>        // TODO set to 4?
 }
 impl Game {
-    pub fn new(players: u8, random: StdRng) -> Result<Game, &'static str> {
+    pub fn new(players: u8) -> Result<Game, &'static str> {
         let n_factories = get_n_factories(players)?;
         let mut factories = SmallVec::<[Factory; 5]>::new();
         for _ in 0..n_factories {
@@ -362,10 +368,9 @@ impl Game {
         }
 
         let game = Game {
-            random: random,
             turn: 0,
             player: 0,
-            box_top: Bag(SmallVec::<[Tile; 128]>::new()),
+            box_top: Bag(tinyvec::ArrayVec::<[Tile; 128]>::new()),
             bag: Bag::default(),
             market: Market::default(),
             factories: factories,
@@ -374,7 +379,7 @@ impl Game {
 
         Ok(game)
     }
-    pub fn fill(&mut self) -> Result<(), &'static str> {
+    pub fn fill(&mut self, mut rng: StdRng) -> Result<(), &'static str> {
         for factory in &self.factories {
             if factory.len() != 0 {
                 return Err("Cannot fill, factories are not empty")
@@ -389,7 +394,7 @@ impl Game {
                     return Ok(())
                 }
                 else {
-                    let tile_i:usize = self.random.gen_range(0..self.bag.len());
+                    let tile_i:usize = rng.gen_range(0..self.bag.len());
                     let tile = self.bag.remove(tile_i);
                     factory.push(tile);
                 }
@@ -406,7 +411,8 @@ impl Game {
                     board.wall[row][index] = true;
                     board.score += board.connected((row, index));
 
-                    self.box_top.append(&mut board.patterns[row])
+                    self.box_top.extend_from_slice(board.patterns[row].as_slice());
+                    board.patterns[row].clear();
                 }
             }
             let negative = match board.floor.len() {
@@ -484,17 +490,18 @@ impl Game {
                     return Err("That factory is out of bounds");
                 }
 
-                let factory = &mut self.factories[game_move.0 - 1];
+                let factory = self.factories[game_move.0 - 1].deref_mut();
                 if factory.contains(&game_move.1) {  
                     let mut hand = factory.clone();
                     hand.retain(|x| *x == game_move.1);
                     factory.retain(|x| *x != game_move.1);
 
-                    self.market.append(factory);
+                    self.market.extend_from_slice(factory.as_slice());
+                    factory.clear();
 
                     match game_move.2 {
                         0 => {
-                            board.floor.append(&mut hand)
+                            board.floor.extend_from_slice(hand.as_slice());
                         },
                         1..=9 => {
                             let target = &mut board.patterns[game_move.2 - 1];
@@ -503,7 +510,8 @@ impl Game {
                             }
                             let empty = game_move.2 - target.len();
                             if hand.len() <= empty {
-                                target.append(&mut hand);
+                                target.extend_from_slice(hand.as_slice());
+                                hand.clear();
                             }
                             else if empty != 0 {
                                 for tile in hand.drain(..) {
@@ -560,7 +568,7 @@ impl Game {
 // Tests
 
 pub fn complicated() -> Result<Game, &'static str> {
-    let mut game = Game::new(2, StdRng::seed_from_u64(1))?;
+    let mut game = Game::new(2)?;
 
     let mut tiles = Tile::Blue;
 

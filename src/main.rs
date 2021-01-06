@@ -16,15 +16,16 @@ fn main() -> Result<(), &'static str> {
 
     return match program {
         1 => {
-            let rng = StdRng::seed_from_u64(42);
-            let mut game = Game::new(2, rng)?;
-            game.fill()?;
+            let mut rng = StdRng::seed_from_u64(42);
+            let mut game = Game::new(2)?;
+            game.fill(StdRng::from_rng(&mut rng).expect("rng error"))?;
              println!("{:#?}", game);
 
-              game.do_move(GameMove(1, Tile::Red, 2))?;
-              game.do_move(GameMove(4, Tile::Red, 2))?;
+              game.do_move(GameMove(3, Tile::Red, 3))?;
+              game.do_move(GameMove(1, Tile::Yellow, 2))?;
 
-              game.do_move(GameMove(2, Tile::Red, 1))?;
+              game.do_move(GameMove(4, Tile::Blue, 2))?;
+              game.do_move(GameMove(0, Tile::Black, 4))?;
 
               println!("{}", count_options(game, 1, 2));
 
@@ -37,8 +38,8 @@ fn main() -> Result<(), &'static str> {
 
 fn run(rng: StdRng) -> Result<(), &'static str> {
 
-    let mut game = Game::new(2, rng)?;
-    game.fill()?;
+    let mut game = Game::new(2)?;
+    game.fill(StdRng::from_entropy())?;
 
     let mut all_err = false;
     while !all_err {
