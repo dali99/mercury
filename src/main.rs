@@ -11,7 +11,8 @@ use rand::prelude::*;
 
 fn main() -> Result<(), &'static str> {
 
-    let program = 2;
+    let program = std::env::args().nth(1).expect("no program given")
+        .parse().unwrap_or(1);
 
     return match program {
         1 => {
@@ -25,7 +26,7 @@ fn main() -> Result<(), &'static str> {
 
               game.do_move(GameMove(2, Tile::Red, 1))?;
 
-              println!("{}", count_options(game, 0, 2));
+              println!("{}", count_options(game, 1, 2));
 
               Ok(())
         },
@@ -70,23 +71,43 @@ fn calculate_options() -> Result<(), &'static str> {
     // NB: THIS STEP INTRODUCES ERROR, THE REAL NUMBER WILL BE SMALLER THAN THIS
     game.do_move(GameMove(0, Tile::Yellow, 0))?;
 
-    let options = count_options(game, 0, 4);
+    let options = count_options(game, 1, 5);
     println!("{}", options * (20 * 6)*(19 * 6));
 
     Ok(())
 }
 
-fn count_options(game: Game, depth: u8, treshold: u8) -> u128 {
-    coz::scope!("count option");
+fn count_options(_game: Game, depth: u8, treshold: u8) -> u128 {
     let mut sum = 0;
-    let i = GameMoveIter::new(2);
     let mut all_failed = true;
+
+    let mut multiplier = 1;
+
+    let game = match depth {
+        0 => {
+            let mut new_game = _game.clone();
+            for i in GameMoveIter::new(2).next() {
+                match new_game.do_move( i) {
+                    Ok(_) => break,
+                    Err(_) => continue
+                }
+            }
+            multiplier = 20*6;
+            new_game
+        },
+        _ => {
+            _game
+        }
+    };
+
+    let i = GameMoveIter::new(2);
+
     for game_move in i {
         //println!("{:?}", game_move);
         let mut new_game = game.clone();
         let r = new_game.do_move(game_move);
         match r {
-            Ok(_) => sum += {/*println!("{}", depth);*/ all_failed = false; coz::progress!("OK"); count_options(new_game, depth + 1, treshold)},
+            Ok(_) => sum += {/*println!("{}", depth);*/ all_failed = false; coz::progress!("OK"); multiplier * count_options(new_game, depth + 1, treshold)},
             Err(_) => continue
         };
     };
