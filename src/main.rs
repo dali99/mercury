@@ -19,17 +19,22 @@ fn main() -> Result<(), &'static str> {
             let mut rng = StdRng::seed_from_u64(42);
             let mut game = Game::new(2)?;
             game.fill(StdRng::from_rng(&mut rng).expect("rng error"))?;
-             println!("{:#?}", game);
+            println!("{:#?}", game);
 
-              game.do_move(GameMove(3, Tile::Red, 3))?;
-              game.do_move(GameMove(1, Tile::Yellow, 2))?;
+            game.do_move(GameMove(3, Tile::Red, 3))?;
+            game.do_move(GameMove(1, Tile::Yellow, 2))?;
 
-              game.do_move(GameMove(4, Tile::Blue, 2))?;
-              game.do_move(GameMove(0, Tile::Black, 4))?;
+            game.do_move(GameMove(4, Tile::Blue, 2))?;
+            game.do_move(GameMove(0, Tile::Black, 4))?;
 
-              println!("{}", count_options(game, 1, 2));
+            game.do_move(GameMove(5, Tile::Black, 1))?;
+            game.do_move(GameMove(0, Tile::Blue, 3))?;
+            
+            println!("{:#?}", game);
 
-              Ok(())
+            println!("{}", count_options(game, 1, 2));
+
+            Ok(())
         },
         2 => calculate_options(),
         _ => Err("Not a valid program")

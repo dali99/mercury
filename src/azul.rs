@@ -486,7 +486,7 @@ impl Game {
             },
             GameMove(1..=9, _, _) => {
                 let board =  &mut self.boards[self.player];
-                if game_move.0 > self.factories.len() - 1 {
+                if game_move.0 > self.factories.len() {
                     return Err("That factory is out of bounds");
                 }
 
