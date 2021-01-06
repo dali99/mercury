@@ -61,9 +61,11 @@ fn calculate_options() -> Result<(), &'static str> {
 
     // We know how many possibilities there are the first round...
     game.do_move(GameMove(1, Tile::Blue, 0))?;
+    // We also know how many possiblities there are the second round.
+    game.do_move(GameMove(0, Tile::Yellow, 0))?;
 
     let options = count_options(game, 0, 4);
-    println!("{}", options * 20 * 6);
+    println!("{}", options * (20 * 6)*(19*6));
 
     Ok(())
 }
