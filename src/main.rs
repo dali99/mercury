@@ -74,7 +74,7 @@ fn calculate_options() -> Result<(), &'static str> {
 fn count_options(game: Game, depth: u8, treshold: u8) -> u128 {
     coz::scope!("count option");
     let mut sum = 0;
-    let i = GameMove::default();
+    let i = GameMoveIter::new(2);
     let mut all_failed = true;
     for game_move in i {
         //println!("{:?}", game_move);

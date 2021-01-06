@@ -75,13 +75,33 @@ impl IntoIterator for GameMove {
 
     fn into_iter(self) -> Self::IntoIter {
         GameMoveIter {
+            players: 4,
             current: self
         }
     }
 }
 
+#[derive(Debug)]
 pub struct GameMoveIter {
+    players: u8,
     current: GameMove
+}
+impl GameMoveIter {
+    pub fn new(players: u8) -> Self {
+        GameMoveIter {
+            players: players,
+            current: GameMove::default()
+        }
+    }
+}
+
+fn get_n_factories(players: u8) -> Result<u8, &'static str> {
+    return match players {
+        2 => Ok(5),
+        3 => Ok(7),
+        4 => Ok(9),
+        _ => Err("Not a valid amount of players")
+    };
 }
 
 impl Iterator for GameMoveIter {
@@ -92,15 +112,20 @@ impl Iterator for GameMoveIter {
         let tile = self.current.1;
         let pattern = self.current.2;
 
-        if factory == 9 && tile == Tile::Teal && pattern == 0 {
+        let max_factories = match get_n_factories(self.players) {
+            Ok(n) => n,
+            Err(_) => return None
+        } as usize;
+
+        if factory == max_factories && tile == Tile::Teal && pattern == 0 {
             return None
         }
-        else if factory == 9 && tile == Tile::Teal {
+        else if factory == max_factories && tile == Tile::Teal {
             let next = GameMove(0, Tile::Blue, (pattern + 1) % 6);
             self.current = next;
             return Some(next)
         }
-        else if factory == 9 {
+        else if factory == max_factories {
             let next = GameMove(0, tile.into_iter().next().unwrap(), pattern);
             self.current = next;
             return Some(next)
@@ -324,13 +349,8 @@ pub struct Game {
     boards: SmallVec<[Board; 2]>        // TODO set to 4?
 }
 impl Game {
-    pub fn new(players: usize, random: StdRng) -> Result<Game, &'static str> {
-        let n_factories = match players {
-            2 => 5,
-            3 => 7,
-            4 => 9,
-            _ => return Err("Not a valid amount of players")
-        };
+    pub fn new(players: u8, random: StdRng) -> Result<Game, &'static str> {
+        let n_factories = get_n_factories(players)?;
         let mut factories = SmallVec::<[Factory; 5]>::new();
         for _ in 0..n_factories {
             factories.push(Factory::default())
