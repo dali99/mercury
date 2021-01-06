@@ -213,24 +213,25 @@ impl DerefMut for Factory {
 
 
 
-#[derive(Debug, Clone)]
-struct Market (SmallVec<[Tile; 28]>);
+#[derive(Debug, Clone, Copy)]
+struct Market (tinyvec::ArrayVec<[Tile; 28]>);
 impl Default for Market {
     fn default() -> Self {
-        let mut market = SmallVec::<[Tile; 28]>::new();
+        // tiles * factories + start = 3 * 9 + 1 = 28
+        let mut market = tinyvec::ArrayVec::<[Tile; 28]>::new();
         market.push(Tile::Start);
         Market(market)
     }
 }
 impl Deref for Market {
-    type Target = SmallVec<[Tile; 28]>;
+    type Target = tinyvec::ArrayVec<[Tile; 28]>;
 
-    fn deref(&self) -> &SmallVec<[Tile; 28]> {
+    fn deref(&self) -> &tinyvec::ArrayVec<[Tile; 28]> {
         &self.0
     }
 }
 impl DerefMut for Market {
-    fn deref_mut(&mut self) -> &mut SmallVec<[Tile; 28]> {
+    fn deref_mut(&mut self) -> &mut tinyvec::ArrayVec<[Tile; 28]> {
         &mut self.0
     }
 }
@@ -240,11 +241,11 @@ type Patterns = [tinyvec::ArrayVec<[Tile; 5]>; 5];
 type Row  = [bool; 5];
 type Wall = [Row;  5];
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Copy)]
 struct Board {
     score: u8,
     wall: Wall,
-    floor: SmallVec<[Tile; 7]>,
+    floor: tinyvec::ArrayVec<[Tile; 20]>,
     patterns: Patterns,
 }
 impl Board {
@@ -344,25 +345,25 @@ impl Board {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Game {
     turn: u32,
     player: usize,
     box_top: Bag,
     bag: Bag,
     market: Market,
-    factories: SmallVec<[Factory; 5]>,  // TODO set to 9?
-    boards: SmallVec<[Board; 2]>        // TODO set to 4?
+    factories: tinyvec::ArrayVec<[Factory; 9]>,  // TODO set to 9?
+    boards: tinyvec::ArrayVec<[Board; 4]>        // TODO set to 4?
 }
 impl Game {
     pub fn new(players: u8) -> Result<Game, &'static str> {
         let n_factories = get_n_factories(players)?;
-        let mut factories = SmallVec::<[Factory; 5]>::new();
+        let mut factories = tinyvec::ArrayVec::<[Factory; 9]>::new();
         for _ in 0..n_factories {
             factories.push(Factory::default())
         }
 
-        let mut boards = SmallVec::<[Board; 2]>::new();
+        let mut boards = tinyvec::ArrayVec::<[Board; 4]>::new();
         for _ in 0..players {
             boards.push(Board::default());
         }
@@ -429,7 +430,7 @@ impl Game {
         }
         Ok(())
     }
-    // #[no_alloc(forbid)]
+    #[no_alloc(forbid)]
     pub fn do_move(&mut self, game_move: GameMove) -> Result<(), &'static str> {
         let board =  &mut self.boards[self.player];
         match game_move {
@@ -440,7 +441,8 @@ impl Game {
                     hand.retain(|x| *x == Tile::Start || *x == game_move.1);
                     self.market.retain(|x| *x != Tile::Start && *x != game_move.1);
                     
-                    board.floor.append(&mut hand);
+                    board.floor.extend_from_slice(hand.as_slice());
+                    hand.clear();
                 }
                 else {
                     return Err("Market does not contain selected tile")
@@ -538,6 +540,7 @@ impl Game {
             GameMove(_,_,_) => return Err("Not a valid move")
         }
 
+        /*
         let mut empty = true;
         for factory in &mut self.factories {
             if factory.len() != 0 {
@@ -557,9 +560,9 @@ impl Game {
         else {
             self.player = (self.player + 1) % self.boards.len();
         }
-
+        */
+        self.player = (self.player + 1) % self.boards.len();
         self.turn += 1;
-
         Ok(())
     }
 }
