@@ -7,9 +7,11 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rand = "0.8.0"
+rand = "0.8.1"
 coz = "0.1"
 tinyvec = "1.1.0"
+
+modular-bitfield = "0.11.2"
 
 #jemallocator = "0.3.2"
 #mimalloc = { version = "0.1.22", default-features = false }

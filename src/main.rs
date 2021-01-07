@@ -1,3 +1,5 @@
+#![feature(test)]
+
 mod azul;
 use azul::*;
 use rand::prelude::*;
@@ -13,14 +15,14 @@ fn main() -> Result<(), &'static str> {
     let program = std::env::args().nth(1).expect("no program given")
         .parse().unwrap_or(1);
 
-    size_of_stuff();
+    // size_of_stuff();
 
     return match program {
         1 => {
             let mut rng = StdRng::seed_from_u64(42);
             let mut game = Game::new(2)?;
             game.fill(StdRng::from_rng(&mut rng).expect("rng error"))?;
-            println!("{:#?}", game);
+            //println!("{:#?}", game);
 
             game.do_move(GameMove(3, Tile::Red, 3))?;
             game.do_move(GameMove(1, Tile::Yellow, 2))?;
@@ -29,15 +31,21 @@ fn main() -> Result<(), &'static str> {
             game.do_move(GameMove(0, Tile::Black, 4))?;
 
             game.do_move(GameMove(5, Tile::Black, 1))?;
-            // game.do_move(GameMove(0, Tile::Blue, 3))?;
+            game.do_move(GameMove(0, Tile::Blue, 3))?;
             
-            println!("{:#?}", game);
+            // println!("{:#?}", game);
 
             println!("{}", count_options(game, 1, 2));
 
             Ok(())
         },
         2 => calculate_options(),
+        3 => size_of_bitfields(),
+        4 => {
+            let mut game = Game2::create();
+            game.fill(StdRng::seed_from_u64(42));
+            Ok(())
+        },
         _ => Err("Not a valid program")
     }
 }
