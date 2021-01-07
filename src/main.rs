@@ -8,11 +8,12 @@ use rand::prelude::*;
 //#[global_allocator]
 //static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-
 fn main() -> Result<(), &'static str> {
 
     let program = std::env::args().nth(1).expect("no program given")
         .parse().unwrap_or(1);
+
+    size_of_stuff();
 
     return match program {
         1 => {
@@ -28,7 +29,7 @@ fn main() -> Result<(), &'static str> {
             game.do_move(GameMove(0, Tile::Black, 4))?;
 
             game.do_move(GameMove(5, Tile::Black, 1))?;
-            game.do_move(GameMove(0, Tile::Blue, 3))?;
+            // game.do_move(GameMove(0, Tile::Blue, 3))?;
             
             println!("{:#?}", game);
 

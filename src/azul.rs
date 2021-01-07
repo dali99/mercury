@@ -1,10 +1,26 @@
 use std::ops::{Deref, DerefMut};
 use rand::prelude::*;
-use smallvec::{SmallVec, smallvec};
+//use smallvec::{SmallVec, smallvec};
 
-use alloc_counter::{AllocCounterSystem, no_alloc};
-#[global_allocator]
-static A: AllocCounterSystem = AllocCounterSystem;
+//use alloc_counter::{AllocCounterSystem, no_alloc};
+//#[global_allocator]
+//static A: AllocCounterSystem = AllocCounterSystem;
+
+pub fn size_of_stuff() {
+    println!("size of azul game: {}", std::mem::size_of::<Game>());
+    println!("size of azul tile: {}", std::mem::size_of::<Tile>());
+    println!("size of azul bag: {}", std::mem::size_of::<Bag>());
+    println!("size of azul market: {}", std::mem::size_of::<Market>());
+    println!("size of azul factories: {}", std::mem::size_of::<tinyvec::ArrayVec<[Factory; 9]>>());
+    println!("size of azul factory array: {}", std::mem::size_of::<[Factory; 9]>());
+    println!("size of azul factory: {}", std::mem::size_of::<Factory>());
+    println!("size of azul boards: {}", std::mem::size_of::<tinyvec::ArrayVec<[Board; 4]>>());
+    println!("size of azul board array: {}", std::mem::size_of::<[Board; 4]>());
+    println!("size of azul board: {}", std::mem::size_of::<Board>());
+
+    println!("size of azul option tile: {}", std::mem::size_of::<Option<Tile>>());
+
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Tile {
@@ -193,7 +209,7 @@ impl From<tinyvec::ArrayVec<[Tile; 128]>> for Bag {
 #[derive(Default, Debug, Copy)]
 struct Factory (tinyvec::ArrayVec<[Tile; 4]>);
 impl Clone for Factory {
-    #[no_alloc]
+    //#[no_alloc]
     fn clone(&self) -> Self {
         Factory(self.0.clone())
     }
@@ -345,6 +361,7 @@ impl Board {
     }
 }
 
+//#[repr(align(16))]
 #[derive(Debug, Clone, Copy)]
 pub struct Game {
     turn: u32,
@@ -430,7 +447,7 @@ impl Game {
         }
         Ok(())
     }
-    #[no_alloc(forbid)]
+    // #[no_alloc(forbid)]
     pub fn do_move(&mut self, game_move: GameMove) -> Result<(), &'static str> {
         let board =  &mut self.boards[self.player];
         match game_move {
@@ -587,7 +604,7 @@ pub fn complicated() -> Result<Game, &'static str> {
 
 #[test]
 fn bag() {
-    let game = Game::new(2, StdRng::seed_from_u64(123)).unwrap();
+    let game = Game::new(2).unwrap();
     let bag = game.bag;
     assert_eq!(bag.len(), 100);
 
@@ -621,4 +638,9 @@ fn game_move_iter() {
     assert_eq!(i.into_iter().next().unwrap(), GameMove(1, Tile::Blue, 1));
 
     assert_eq!(i.into_iter().count(), 5)
+}
+
+#[test]
+fn sizes() {
+    println!("size of azul game: {}", std::mem::size_of::<Game>());
 }
