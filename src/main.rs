@@ -28,7 +28,7 @@ fn main() -> Result<(), &'static str> {
             game.do_move(GameMove(0, Tile::Black, 4))?;
 
             game.do_move(GameMove(5, Tile::Black, 1))?;
-            game.do_move(GameMove(0, Tile::Blue, 3))?;
+            //game.do_move(GameMove(0, Tile::Blue, 3))?;
             
             println!("{:#?}", game);
 
