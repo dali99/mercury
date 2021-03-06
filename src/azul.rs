@@ -205,9 +205,30 @@ impl From<tinyvec::ArrayVec<[Tile; 128]>> for Bag {
     }
 }
 
+trait Compress {
+    fn compress(&self) -> usize;
+}
+
+impl Compress for Bag {
+    fn compress(&self) -> usize {
+        let blue = self.iter().filter(|&&t| t == Tile::Blue).count();
+        let yellow = self.iter().filter(|&&t| t == Tile::Yellow).count();
+        let red = self.iter().filter(|&&t| t == Tile::Red).count();
+        let black = self.iter().filter(|&&t| t == Tile::Black).count();
+        let teal = self.iter().filter(|&&t| t == Tile::Teal).count();
+
+        let compressed = blue*21_usize.pow(0)
+            + yellow*21_usize.pow(1)
+            + red*21_usize.pow(2)
+            + black*21_usize.pow(3)
+            + teal*21_usize.pow(4);
+        
+        compressed
+    }
+}
 
 #[derive(Default, Debug, Copy)]
-struct Factory (tinyvec::ArrayVec<[Tile; 4]>);
+struct Factory (tinyvec::ArrayVec<[Option<Tile>; 4]>);
 impl Clone for Factory {
     //#[no_alloc]
     fn clone(&self) -> Self {
@@ -215,18 +236,232 @@ impl Clone for Factory {
     }
 }
 impl Deref for Factory {
-    type Target = tinyvec::ArrayVec<[Tile; 4]>;
+    type Target = tinyvec::ArrayVec<[Option<Tile>; 4]>;
 
-    fn deref(&self) -> &tinyvec::ArrayVec<[Tile; 4]> {
+    fn deref(&self) -> &tinyvec::ArrayVec<[Option<Tile>; 4]> {
         &self.0
     }
 }
 impl DerefMut for Factory {
-    fn deref_mut(&mut self) -> &mut tinyvec::ArrayVec<[Tile; 4]> {
+    fn deref_mut(&mut self) -> &mut tinyvec::ArrayVec<[Option<Tile>; 4]> {
         &mut self.0
     }
 }
 
+impl Compress for Factory {
+    // Assumes factory is sorted!
+    fn compress(&self) -> usize {
+        match self[..] {
+            [Option::None, Option::None, Option::None, Option::None] => 0,
+
+            [Option::None, Option::None, Option::None, Some(Tile::Blue)] => 1,
+            [Option::None, Option::None, Option::None, Some(Tile::Yellow)] => 2,
+            [Option::None, Option::None, Option::None, Some(Tile::Red)] => 3,
+            [Option::None, Option::None, Option::None, Some(Tile::Black)] => 4,
+            [Option::None, Option::None, Option::None, Some(Tile::Teal)] => 5,
+
+            [Option::None, Option::None, Some(Tile::Blue), Some(Tile::Blue)] => 6,
+            [Option::None, Option::None, Some(Tile::Blue), Some(Tile::Yellow)] => 7,
+            [Option::None, Option::None, Some(Tile::Blue), Some(Tile::Red)] => 8,
+            [Option::None, Option::None, Some(Tile::Blue), Some(Tile::Black)] => 9,
+            [Option::None, Option::None, Some(Tile::Blue), Some(Tile::Teal)] => 10,
+
+            [Option::None, Option::None, Some(Tile::Yellow), Some(Tile::Yellow)] => 11,
+            [Option::None, Option::None, Some(Tile::Yellow), Some(Tile::Red)] => 12,
+            [Option::None, Option::None, Some(Tile::Yellow), Some(Tile::Black)] => 13,
+            [Option::None, Option::None, Some(Tile::Yellow), Some(Tile::Teal)] => 14,
+
+            [Option::None, Option::None, Some(Tile::Red), Some(Tile::Red)] => 15,
+            [Option::None, Option::None, Some(Tile::Red), Some(Tile::Black)] => 16,
+            [Option::None, Option::None, Some(Tile::Red), Some(Tile::Teal)] => 17,
+
+            [Option::None, Option::None, Some(Tile::Black), Some(Tile::Black)] => 18,
+            [Option::None, Option::None, Some(Tile::Black), Some(Tile::Teal)] => 19,
+
+            [Option::None, Option::None, Some(Tile::Teal), Some(Tile::Teal)] => 20,
+
+
+            [Option::None, Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Blue)] => 21,
+            [Option::None, Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Yellow)] => 22,
+            [Option::None, Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Red)] => 23,
+            [Option::None, Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Black)] => 24,
+            [Option::None, Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Teal)] => 25,
+
+            [Option::None, Some(Tile::Blue), Some(Tile::Yellow), Some(Tile::Yellow)] => 26,
+            [Option::None, Some(Tile::Blue), Some(Tile::Yellow), Some(Tile::Red)] => 27,
+            [Option::None, Some(Tile::Blue), Some(Tile::Yellow), Some(Tile::Black)] => 28,
+            [Option::None, Some(Tile::Blue), Some(Tile::Yellow), Some(Tile::Teal)] => 29,
+
+            [Option::None, Some(Tile::Blue), Some(Tile::Red), Some(Tile::Red)] => 30,
+            [Option::None, Some(Tile::Blue), Some(Tile::Red), Some(Tile::Black)] => 31,
+            [Option::None, Some(Tile::Blue), Some(Tile::Red), Some(Tile::Teal)] => 32,
+
+            [Option::None, Some(Tile::Blue), Some(Tile::Black), Some(Tile::Black)] => 33,
+            [Option::None, Some(Tile::Blue), Some(Tile::Black), Some(Tile::Teal)] => 34,
+
+            [Option::None, Some(Tile::Blue), Some(Tile::Teal), Some(Tile::Teal)] => 35,
+
+            
+            [Option::None, Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Yellow)] => 36,
+            [Option::None, Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Red)] => 37,
+            [Option::None, Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Black)] => 38,
+            [Option::None, Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Teal)] => 39,
+
+            [Option::None, Some(Tile::Yellow), Some(Tile::Red), Some(Tile::Red)] => 40,
+            [Option::None, Some(Tile::Yellow), Some(Tile::Red), Some(Tile::Black)] => 41,
+            [Option::None, Some(Tile::Yellow), Some(Tile::Red), Some(Tile::Teal)] => 42,
+
+            [Option::None, Some(Tile::Yellow), Some(Tile::Black), Some(Tile::Black)] => 43,
+            [Option::None, Some(Tile::Yellow), Some(Tile::Black), Some(Tile::Teal)] => 44,
+
+            [Option::None, Some(Tile::Yellow), Some(Tile::Teal), Some(Tile::Teal)] => 45,
+
+
+            [Option::None, Some(Tile::Red), Some(Tile::Red), Some(Tile::Red)] => 46,
+            [Option::None, Some(Tile::Red), Some(Tile::Red), Some(Tile::Black)] => 47,
+            [Option::None, Some(Tile::Red), Some(Tile::Red), Some(Tile::Teal)] => 48,
+
+            [Option::None, Some(Tile::Red), Some(Tile::Black), Some(Tile::Black)] => 49,
+            [Option::None, Some(Tile::Red), Some(Tile::Black), Some(Tile::Teal)] => 50,
+
+            [Option::None, Some(Tile::Red), Some(Tile::Teal), Some(Tile::Teal)] => 51,
+
+
+            [Option::None, Some(Tile::Black), Some(Tile::Black), Some(Tile::Black)] => 52,
+            [Option::None, Some(Tile::Black), Some(Tile::Black), Some(Tile::Teal)] => 53,
+
+            [Option::None, Some(Tile::Black), Some(Tile::Teal), Some(Tile::Teal)] => 54,
+
+
+            [Option::None, Some(Tile::Teal), Some(Tile::Teal), Some(Tile::Teal)] => 55,
+
+
+
+            [Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Blue)] => 56,
+            [Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Yellow)] => 57,
+            [Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Red)] => 58,
+            [Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Black)] => 59,
+            [Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Teal)] => 60,
+
+            [Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Yellow), Some(Tile::Yellow)] => 61,
+            [Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Yellow), Some(Tile::Red)] => 62,
+            [Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Yellow), Some(Tile::Black)] => 63,
+            [Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Yellow), Some(Tile::Teal)] => 64,
+
+            [Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Red), Some(Tile::Red)] => 65,
+            [Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Red), Some(Tile::Black)] => 66,
+            [Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Red), Some(Tile::Teal)] => 67,
+
+            [Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Black), Some(Tile::Black)] => 68,
+            [Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Black), Some(Tile::Teal)] => 69,
+
+            [Some(Tile::Blue), Some(Tile::Blue), Some(Tile::Teal), Some(Tile::Teal)] => 70,
+
+            
+            [Some(Tile::Blue), Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Yellow)] => 71,
+            [Some(Tile::Blue), Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Red)] => 72,
+            [Some(Tile::Blue), Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Black)] => 73,
+            [Some(Tile::Blue), Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Teal)] => 74,
+
+            [Some(Tile::Blue), Some(Tile::Yellow), Some(Tile::Red), Some(Tile::Red)] => 75,
+            [Some(Tile::Blue), Some(Tile::Yellow), Some(Tile::Red), Some(Tile::Black)] => 76,
+            [Some(Tile::Blue), Some(Tile::Yellow), Some(Tile::Red), Some(Tile::Teal)] => 77,
+
+            [Some(Tile::Blue), Some(Tile::Yellow), Some(Tile::Black), Some(Tile::Black)] => 78,
+            [Some(Tile::Blue), Some(Tile::Yellow), Some(Tile::Black), Some(Tile::Teal)] => 79,
+
+            [Some(Tile::Blue), Some(Tile::Yellow), Some(Tile::Teal), Some(Tile::Teal)] => 80,
+
+
+            [Some(Tile::Blue), Some(Tile::Red), Some(Tile::Red), Some(Tile::Red)] => 81,
+            [Some(Tile::Blue), Some(Tile::Red), Some(Tile::Red), Some(Tile::Black)] => 82,
+            [Some(Tile::Blue), Some(Tile::Red), Some(Tile::Red), Some(Tile::Teal)] => 83,
+
+            [Some(Tile::Blue), Some(Tile::Red), Some(Tile::Black), Some(Tile::Black)] => 84,
+            [Some(Tile::Blue), Some(Tile::Red), Some(Tile::Black), Some(Tile::Teal)] => 85,
+
+            [Some(Tile::Blue), Some(Tile::Red), Some(Tile::Teal), Some(Tile::Teal)] => 86,
+
+
+            [Some(Tile::Blue), Some(Tile::Black), Some(Tile::Black), Some(Tile::Black)] => 87,
+            [Some(Tile::Blue), Some(Tile::Black), Some(Tile::Black), Some(Tile::Teal)] => 88,
+
+            [Some(Tile::Blue), Some(Tile::Black), Some(Tile::Teal), Some(Tile::Teal)] => 89,
+
+
+            [Some(Tile::Blue), Some(Tile::Teal), Some(Tile::Teal), Some(Tile::Teal)] => 90,
+
+
+
+            [Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Yellow)] => 91,
+            [Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Red)] => 92,
+            [Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Black)] => 93,
+            [Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Teal)] => 94,
+
+            [Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Red), Some(Tile::Red)] => 95,
+            [Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Red), Some(Tile::Black)] => 96,
+            [Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Red), Some(Tile::Teal)] => 97,
+
+            [Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Black), Some(Tile::Black)] => 98,
+            [Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Black), Some(Tile::Teal)] => 99,
+
+            [Some(Tile::Yellow), Some(Tile::Yellow), Some(Tile::Teal), Some(Tile::Teal)] => 100,
+
+
+            [Some(Tile::Yellow), Some(Tile::Red), Some(Tile::Red), Some(Tile::Red)] => 101,
+            [Some(Tile::Yellow), Some(Tile::Red), Some(Tile::Red), Some(Tile::Black)] => 102,
+            [Some(Tile::Yellow), Some(Tile::Red), Some(Tile::Red), Some(Tile::Teal)] => 103,
+
+            [Some(Tile::Yellow), Some(Tile::Red), Some(Tile::Black), Some(Tile::Black)] => 104,
+            [Some(Tile::Yellow), Some(Tile::Red), Some(Tile::Black), Some(Tile::Teal)] => 105,
+
+            [Some(Tile::Yellow), Some(Tile::Red), Some(Tile::Teal), Some(Tile::Teal)] => 106,
+
+
+            [Some(Tile::Yellow), Some(Tile::Black), Some(Tile::Black), Some(Tile::Black)] => 107,
+            [Some(Tile::Yellow), Some(Tile::Black), Some(Tile::Black), Some(Tile::Teal)] => 108,
+
+            [Some(Tile::Yellow), Some(Tile::Black), Some(Tile::Teal), Some(Tile::Teal)] => 109,
+
+
+            [Some(Tile::Yellow), Some(Tile::Teal), Some(Tile::Teal), Some(Tile::Teal)] => 110,
+
+
+
+            [Some(Tile::Red), Some(Tile::Red), Some(Tile::Red), Some(Tile::Red)] => 111,
+            [Some(Tile::Red), Some(Tile::Red), Some(Tile::Red), Some(Tile::Black)] => 112,
+            [Some(Tile::Red), Some(Tile::Red), Some(Tile::Red), Some(Tile::Teal)] => 113,
+
+            [Some(Tile::Red), Some(Tile::Red), Some(Tile::Black), Some(Tile::Black)] => 114,
+            [Some(Tile::Red), Some(Tile::Red), Some(Tile::Black), Some(Tile::Teal)] => 115,
+
+            [Some(Tile::Red), Some(Tile::Red), Some(Tile::Teal), Some(Tile::Teal)] => 116,
+
+
+            [Some(Tile::Red), Some(Tile::Black), Some(Tile::Black), Some(Tile::Black)] => 117,
+            [Some(Tile::Red), Some(Tile::Black), Some(Tile::Black), Some(Tile::Teal)] => 118,
+
+            [Some(Tile::Red), Some(Tile::Black), Some(Tile::Teal), Some(Tile::Teal)] => 119,
+
+
+            [Some(Tile::Red), Some(Tile::Teal), Some(Tile::Teal), Some(Tile::Teal)] => 120,
+
+
+
+            [Some(Tile::Black), Some(Tile::Black), Some(Tile::Black), Some(Tile::Black)] => 121,
+            [Some(Tile::Black), Some(Tile::Black), Some(Tile::Black), Some(Tile::Teal)] => 122,
+
+            [Some(Tile::Black), Some(Tile::Black), Some(Tile::Teal), Some(Tile::Teal)] => 123,
+
+
+            [Some(Tile::Black), Some(Tile::Teal), Some(Tile::Teal), Some(Tile::Teal)] => 124,
+
+
+
+            [Some(Tile::Teal), Some(Tile::Teal), Some(Tile::Teal), Some(Tile::Teal)] => 125,
+        }
+    }
+}
 
 
 #[derive(Debug, Clone, Copy)]
@@ -409,6 +644,7 @@ impl Game {
                     self.bag.append(&mut self.box_top);
                 }
                 else if self.bag.len() == 0 {
+                    factory.sort_unstable();
                     return Ok(())
                 }
                 else {
@@ -417,6 +653,8 @@ impl Game {
                     factory.push(tile);
                 }
             }
+            factory.sort_unstable();
+            println!("{}", factory.compress());
         };
         Ok(())
     }
