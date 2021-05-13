@@ -2,6 +2,8 @@
 
 mod azul;
 use azul::*;
+mod azul2;
+use azul2::*;
 use rand::prelude::*;
 
 //#[global_allocator]
