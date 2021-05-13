@@ -11,6 +11,8 @@ rand = "0.8.1"
 coz = "0.1"
 tinyvec = "1.1.0"
 
+cached = "0.23.0"
+
 modular-bitfield = "0.11.2"
 
 #jemallocator = "0.3.2"

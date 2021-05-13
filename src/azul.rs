@@ -23,7 +23,7 @@ pub fn size_of_stuff() {
 
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Tile {
     Start,
     Blue,
@@ -161,7 +161,7 @@ impl Iterator for GameMoveIter {
     }
 }
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug, Copy, PartialEq, Eq, Hash)]
 struct Bag (tinyvec::ArrayVec::<[Tile; 128]>);
 
 impl Default for Bag {
@@ -207,7 +207,7 @@ impl From<tinyvec::ArrayVec<[Tile; 128]>> for Bag {
 }
 
 
-#[derive(Default, Debug, Copy)]
+#[derive(Default, Debug, Copy, PartialEq, Eq, Hash)]
 struct Factory (tinyvec::ArrayVec<[Tile; 4]>);
 impl Clone for Factory {
     //#[no_alloc]
@@ -230,7 +230,7 @@ impl DerefMut for Factory {
 
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 struct Market (tinyvec::ArrayVec<[Tile; 28]>);
 impl Default for Market {
     fn default() -> Self {
@@ -258,7 +258,7 @@ type Patterns = [tinyvec::ArrayVec<[Tile; 5]>; 5];
 type Row  = [bool; 5];
 type Wall = [Row;  5];
 
-#[derive(Debug, Clone, Default, Copy)]
+#[derive(Debug, Clone, Default, Copy, PartialEq, Eq, Hash)]
 struct Board {
     score: u8,
     wall: Wall,
@@ -363,7 +363,7 @@ impl Board {
 }
 
 //#[repr(align(16))]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Game {
     turn: u32,
     player: u8,

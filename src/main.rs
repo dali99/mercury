@@ -1,4 +1,5 @@
 #![feature(test)]
+use cached::proc_macro::cached;
 
 mod azul;
 use azul::*;
@@ -32,7 +33,7 @@ fn main() -> Result<(), &'static str> {
             game.do_move(GameMove(4, Tile::Blue, 2))?;
             game.do_move(GameMove(0, Tile::Black, 4))?;
 
-            game.do_move(GameMove(5, Tile::Black, 1))?;
+            //game.do_move(GameMove(5, Tile::Black, 1))?;
             //game.do_move(GameMove(0, Tile::Blue, 3))?;
             
             // println!("{:#?}", game);
@@ -94,6 +95,7 @@ fn calculate_options() -> Result<(), &'static str> {
     Ok(())
 }
 
+#[cached(size=15_000_000, key = "Game", convert = r#"{ _game }"#)]
 fn count_options(_game: Game, depth: u8, treshold: u8) -> u128 {
     let mut sum = 0;
     let mut all_failed = true;
