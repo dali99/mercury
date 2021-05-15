@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use std::{hash::Hash, ops::{Deref, DerefMut}};
 use rand::prelude::*;
 use rand::distributions::WeightedIndex;
 //use smallvec::{SmallVec, smallvec};
@@ -23,8 +23,9 @@ pub fn size_of_stuff() {
 
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Tile {
+//    None,
     Start,
     Blue,
     Yellow,
@@ -35,6 +36,7 @@ pub enum Tile {
 
 impl Default for Tile {
     fn default() -> Self {
+//        Tile::None
         Tile::Blue
     }
 }
@@ -49,6 +51,15 @@ impl IntoIterator for Tile {
         }
     }
 }
+
+/*impl From<Option<Tile>> for Tile {
+    fn from(option: Option<Tile>) -> Tile {
+        match option {
+            Option::None => Tile::None,
+            Some(tile) => tile
+        }
+    }
+}*/
 
 pub struct TileIter {
     current: Tile
@@ -207,7 +218,7 @@ impl From<tinyvec::ArrayVec<[Tile; 128]>> for Bag {
 }
 
 
-#[derive(Default, Debug, Copy, PartialEq, Eq, Hash)]
+#[derive(Default, Debug, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 struct Factory (tinyvec::ArrayVec<[Tile; 4]>);
 impl Clone for Factory {
     //#[no_alloc]
@@ -227,7 +238,6 @@ impl DerefMut for Factory {
         &mut self.0
     }
 }
-
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -418,7 +428,9 @@ impl Game {
                     factory.push(tile);
                 }
             }
+            factory.sort_unstable();
         };
+        self.factories.sort_unstable();
         Ok(())
     }
     fn score(&mut self) -> Result<(), &'static str> {
@@ -579,6 +591,13 @@ impl Game {
             self.player = (self.player + 1) % self.boards.len();
         }
         */
+
+        self.factories.sort_unstable();
+        self.market.sort();
+        for board in &mut self.boards {
+            board.floor.sort_unstable();
+        }
+
         self.player = (self.player + 1) % self.boards.len() as u8;
         self.turn += 1;
         Ok(())

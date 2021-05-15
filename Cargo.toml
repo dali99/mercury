@@ -12,6 +12,7 @@ coz = "0.1"
 tinyvec = "1.1.0"
 
 cached = "0.23.0"
+ahash = "0.7.2"
 
 modular-bitfield = "0.11.2"
 
