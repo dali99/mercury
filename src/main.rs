@@ -31,9 +31,9 @@ fn main() -> Result<(), &'static str> {
             game.do_move(GameMove(5, Tile::Yellow, 2))?;
 
             game.do_move(GameMove(3, Tile::Blue, 2))?;
-            //game.do_move(GameMove(0, Tile::Black, 4))?;
+            game.do_move(GameMove(0, Tile::Black, 4))?;
 
-            //game.do_move(GameMove(5, Tile::Black, 1))?;
+            game.do_move(GameMove(5, Tile::Black, 1))?;
             //game.do_move(GameMove(0, Tile::Blue, 3))?;
             
             // println!("{:#?}", game);
