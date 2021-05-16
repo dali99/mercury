@@ -1,3 +1,5 @@
+#![feature(bench_black_box)]
+
 use rand::prelude::*;
 use rand::distributions::WeightedIndex;
 
