@@ -708,6 +708,13 @@ pub fn some_game() -> Result<Game, &'static str> {
     factories[4].push(Tile::Black);
     factories[4].push(Tile::Teal);
 
+    let bag = &mut game.bag;
+    bag.blue -= 5;
+    bag.yellow -= 3;
+    bag.black -= 4;
+    bag.red -= 5;
+    bag.teal -= 3;
+
     Ok(game)
 }
 
