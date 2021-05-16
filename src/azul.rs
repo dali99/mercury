@@ -1,4 +1,4 @@
-use std::{hash::Hash, ops::{Deref, DerefMut}};
+use std::{hash::{Hash, Hasher}, ops::{Deref, DerefMut}};
 use rand::prelude::*;
 use rand::distributions::WeightedIndex;
 //use smallvec::{SmallVec, smallvec};
@@ -402,8 +402,8 @@ impl Board {
     }
 }
 
-//#[repr(align(16))]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(packed)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Game {
     turn: u32,
     player: u8,
@@ -660,6 +660,18 @@ impl Game {
     }
 }
 
+unsafe fn any_as_u8_slice<T: Sized>(p: &T) -> &[u8] {
+    ::std::slice::from_raw_parts(
+        (p as *const T) as *const u8,
+        ::std::mem::size_of::<T>(),
+    )
+}
+impl Hash for Game {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        unsafe{any_as_u8_slice(self).deref().hash(state)}
+    }
+
+}
 
 // Tests
 
