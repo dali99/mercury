@@ -22,24 +22,18 @@ fn main() -> Result<(), &'static str> {
 
     return match program {
         1 => {
-            let mut rng = StdRng::seed_from_u64(42);
-            let mut game = Game::new(2)?;
-            game.fill(StdRng::from_rng(&mut rng).expect("rng error"))?;
-            //println!("{:#?}", game);
+            let mut game = some_game()?;
 
-            game.do_move(GameMove(1, Tile::Blue, 2))?;
-            game.do_move(GameMove(3, Tile::Yellow, 2))?;
+            game.do_move(GameMove(2, Tile::Red, 3))?;
+            game.do_move(GameMove(5, Tile::Yellow, 2))?;
 
-            game.do_move(GameMove(0, Tile::Teal, 4))?;
-            game.do_move(GameMove(5, Tile::Teal, 4))?;
+            game.do_move(GameMove(3, Tile::Blue, 2))?;
+            game.do_move(GameMove(0, Tile::Black, 4))?;
 
-            //game.do_move(GameMove(4, Tile::Yellow, 1))?;
+            game.do_move(GameMove(5, Tile::Black, 1))?;
             //game.do_move(GameMove(0, Tile::Blue, 3))?;
-            
-            // println!("{:#?}", game);
 
             println!("{}", count_options(game, 1, 2));
-
             Ok(())
         },
         2 => calculate_options(),

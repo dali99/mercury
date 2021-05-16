@@ -678,6 +678,39 @@ pub fn complicated() -> Result<Game, &'static str> {
     Ok(game)
 }
 
+pub fn some_game() -> Result<Game, &'static str> {
+    let mut game = Game::new(2)?;
+
+    let factories = &mut game.factories;
+
+    factories[0].push(Tile::Blue);
+    factories[0].push(Tile::Blue);
+    factories[0].push(Tile::Yellow);
+    factories[0].push(Tile::Black);
+
+    factories[1].push(Tile::Blue);
+    factories[1].push(Tile::Red);
+    factories[1].push(Tile::Red);
+    factories[1].push(Tile::Red);
+
+    factories[2].push(Tile::Blue);
+    factories[2].push(Tile::Red);
+    factories[2].push(Tile::Black);
+    factories[2].push(Tile::Teal);
+
+    factories[3].push(Tile::Blue);
+    factories[3].push(Tile::Red);
+    factories[3].push(Tile::Black);
+    factories[3].push(Tile::Teal);
+
+    factories[4].push(Tile::Yellow);
+    factories[4].push(Tile::Yellow);
+    factories[4].push(Tile::Black);
+    factories[4].push(Tile::Teal);
+
+    Ok(game)
+}
+
 #[test]
 fn connected() -> Result<(), String> {
     let mut board = Board::default();
