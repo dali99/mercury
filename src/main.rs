@@ -91,7 +91,7 @@ fn calculate_options() -> Result<(), &'static str> {
     Ok(())
 }
 
-#[cached(size=10_000_000, key = "Game", convert = r#"{ _game }"#)]
+#[cached(size=45_000_000, key = "Game", convert = r#"{ _game }"#)]
 fn count_options(_game: Game, depth: u8, treshold: u8) -> u128 {
     let before = std::time::Instant::now();
 
