@@ -27,13 +27,13 @@ fn main() -> Result<(), &'static str> {
             game.fill(StdRng::from_rng(&mut rng).expect("rng error"))?;
             //println!("{:#?}", game);
 
-            game.do_move(GameMove(2, Tile::Red, 3))?;
-            game.do_move(GameMove(5, Tile::Yellow, 2))?;
+            game.do_move(GameMove(1, Tile::Blue, 2))?;
+            game.do_move(GameMove(3, Tile::Yellow, 2))?;
 
-            game.do_move(GameMove(3, Tile::Blue, 2))?;
-            game.do_move(GameMove(0, Tile::Black, 4))?;
+            game.do_move(GameMove(0, Tile::Teal, 4))?;
+            game.do_move(GameMove(5, Tile::Teal, 4))?;
 
-            game.do_move(GameMove(5, Tile::Black, 1))?;
+            //game.do_move(GameMove(4, Tile::Yellow, 1))?;
             //game.do_move(GameMove(0, Tile::Blue, 3))?;
             
             // println!("{:#?}", game);
@@ -95,7 +95,7 @@ fn calculate_options() -> Result<(), &'static str> {
     Ok(())
 }
 
-#[cached(size=25_000_000, key = "Game", convert = r#"{ _game }"#)]
+#[cached(size=7_000_000, key = "Game", convert = r#"{ _game }"#)]
 fn count_options(_game: Game, depth: u8, treshold: u8) -> u128 {
     let mut sum = 0;
     let mut all_failed = true;

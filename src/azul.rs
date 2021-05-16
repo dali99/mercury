@@ -173,6 +173,36 @@ impl Iterator for GameMoveIter {
 }
 
 #[derive(Clone, Debug, Copy, PartialEq, Eq, Hash)]
+struct Bag {
+    blue: u8,
+    yellow: u8,
+    red: u8,
+    black: u8,
+    teal: u8,
+}
+
+impl Default for Bag {
+    fn default() -> Self {
+        Bag {
+            blue: 20,
+            yellow: 20,
+            red: 20,
+            black: 20,
+            teal: 20, 
+        }
+    }
+}
+
+impl Bag {
+    fn len(&self) -> u8 {
+        self.blue + self.yellow + self.red + self.black + self.teal
+    }
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+}
+
+/*#[derive(Clone, Debug, Copy, PartialEq, Eq, Hash)]
 struct Bag (tinyvec::ArrayVec::<[Tile; 128]>);
 
 impl Default for Bag {
@@ -215,7 +245,7 @@ impl From<tinyvec::ArrayVec<[Tile; 128]>> for Bag {
     fn from(vector: tinyvec::ArrayVec<[Tile; 128]>) -> Bag {
         Bag(vector)
     }
-}
+}*/
 
 
 #[derive(Default, Debug, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -399,7 +429,13 @@ impl Game {
         let game = Game {
             turn: 0,
             player: 0,
-            box_top: Bag(tinyvec::ArrayVec::<[Tile; 128]>::new()),
+            box_top: Bag {
+                blue: 0,
+                yellow: 0,
+                red: 0,
+                black: 0,
+                teal: 0,
+            },
             bag: Bag::default(),
             market: Market::default(),
             factories: factories,
@@ -416,16 +452,28 @@ impl Game {
         };
         for factory in &mut self.factories {
             for _ in 0..4 {
-                if self.bag.len() == 0 && self.box_top.len() > 0 {
-                    self.bag.append(&mut self.box_top);
+                if self.bag.is_empty() && !self.box_top.is_empty() {
+                    self.bag = self.box_top;
+                    self.box_top = Bag { blue: 0, yellow: 0, red: 0, black: 0, teal: 0};
                 }
-                else if self.bag.len() == 0 {
+                else if self.bag.is_empty() {
                     return Ok(())
                 }
                 else {
-                    let tile_i:usize = rng.gen_range(0..self.bag.len());
-                    let tile = self.bag.remove(tile_i);
-                    factory.push(tile);
+                    let choices = [Tile::Blue, Tile::Yellow, Tile::Red, Tile::Black, Tile::Teal];
+                    let weights = [self.bag.blue, self.bag.yellow, self.bag.red, self.bag.black, self.bag.teal];
+                    let dist = WeightedIndex::new(&weights).unwrap();
+                    let tile = choices[dist.sample(&mut rng)];
+
+                    match tile {
+                        Tile::Start => {return Err("This should never happen")}
+                        Tile::Blue => {self.bag.blue -= 1}
+                        Tile::Yellow => {self.bag.yellow -= 1}
+                        Tile::Red => {self.bag.red -= 1}
+                        Tile::Black => {self.bag.black -= 1}
+                        Tile::Teal => {self.bag.teal -= 1}
+                    }
+                    factory.push(tile)
                 }
             }
             factory.sort_unstable();
@@ -442,7 +490,15 @@ impl Game {
                     board.wall[row][index] = true;
                     board.score += board.connected((row, index));
 
-                    self.box_top.extend_from_slice(board.patterns[row].as_slice());
+                    match color {
+                        Tile::Start => {return Err("This should never happen")}
+                        Tile::Blue => {self.box_top.blue += (row as u8 + 1)}
+                        Tile::Yellow => {self.box_top.yellow += (row as u8 + 1)}
+                        Tile::Red => {self.box_top.red += (row as u8 + 1)}
+                        Tile::Black => {self.box_top.black += (row as u8 + 1)}
+                        Tile::Teal => {self.box_top.teal += (row as u8 + 1)}
+                    }
+                    //self.box_top.extend_from_slice(board.patterns[row].as_slice());
                     board.patterns[row].clear();
                 }
             }
@@ -620,17 +676,6 @@ pub fn complicated() -> Result<Game, &'static str> {
     }
 
     Ok(game)
-}
-
-#[test]
-fn bag() {
-    let game = Game::new(2).unwrap();
-    let bag = game.bag;
-    assert_eq!(bag.len(), 100);
-
-    let mut reds = bag.clone();
-    reds.retain(|x| *x == Tile::Red);
-    assert_eq!(reds.len(), 20);
 }
 
 #[test]
