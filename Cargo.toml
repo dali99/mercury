@@ -14,6 +14,8 @@ tinyvec = "1.1.0"
 cached = "0.23.0"
 ahash = "0.7.2"
 
+thousands = "0.2.0"
+
 modular-bitfield = "0.11.2"
 
 #jemallocator = "0.3.2"

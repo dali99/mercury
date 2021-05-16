@@ -7,6 +7,8 @@ mod azul2;
 use azul2::*;
 use rand::prelude::*;
 
+use thousands::Separable;
+
 //#[global_allocator]
 //static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
@@ -28,9 +30,9 @@ fn main() -> Result<(), &'static str> {
             game.do_move(GameMove(5, Tile::Yellow, 2))?;
 
             game.do_move(GameMove(3, Tile::Blue, 2))?;
-            game.do_move(GameMove(0, Tile::Black, 4))?;
+            //game.do_move(GameMove(0, Tile::Black, 4))?;
 
-            game.do_move(GameMove(5, Tile::Black, 1))?;
+            //game.do_move(GameMove(5, Tile::Black, 1))?;
             //game.do_move(GameMove(0, Tile::Blue, 3))?;
 
             println!("{}", count_options(game, 1, 2));
@@ -89,8 +91,10 @@ fn calculate_options() -> Result<(), &'static str> {
     Ok(())
 }
 
-#[cached(size=7_000_000, key = "Game", convert = r#"{ _game }"#)]
+#[cached(size=45_000_000, key = "Game", convert = r#"{ _game }"#)]
 fn count_options(_game: Game, depth: u8, treshold: u8) -> u128 {
+    let before = std::time::Instant::now();
+
     let mut sum = 0;
     let mut all_failed = true;
 
@@ -133,7 +137,11 @@ fn count_options(_game: Game, depth: u8, treshold: u8) -> u128 {
     }
 
     if depth <= treshold {
-        println!("{}: sum: {}", depth, sum);
+        let elapsed = before.elapsed();
+        let hashrate = sum / std::cmp::max(elapsed.as_millis() as u128, 1u128) * 1000u128;
+        println!("{}: sum: {}, took +{:?}: {}/s",
+                  depth,   sum,      elapsed, hashrate.separate_with_spaces()
+        );
     }
     return sum;
 
