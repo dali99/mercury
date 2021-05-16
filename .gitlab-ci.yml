@@ -1,0 +1,52 @@
+image: "rust:nightly-buster"
+
+# Optional: Install a C compiler, cmake and git into the container.
+# You will often need this when you (or any of your dependencies) depends on C code.
+#before_script:
+#- apt-get update -yqq
+#- apt-get install -yqq mingw-w64
+
+
+variables:
+  CARGO_HOME: $CI_PROJECT_DIR/cargo
+  APT_CACHE_DIR: $CI_PROJECT_DIR/apt
+
+cache:
+  key: all
+  paths:
+  - apt/
+  - cargo/
+  - target/
+
+
+stages:
+- build
+
+build:linux-glibc:
+  stage: build
+  script:
+  - cargo build --release
+  artifacts:
+    paths:
+    - target/release/mercury
+
+build:windows:
+  stage: build
+  script:
+  - mkdir .cargo && echo -e "[target.x86_64-pc-windows-gnu]\nlinker = \"x86_64-w64-mingw32-gcc\"\nar = \"x86_64-w64-mingw32-gcc-ar\"" > .cargo/config
+  - apt-get update -yqq
+  - apt-get install -yqq mingw-w64
+  - rustup target add x86_64-pc-windows-gnu
+  - cargo build --release --target=x86_64-pc-windows-gnu
+  artifacts:
+    paths:
+    - target/x86_64-pc-windows-gnu/release/mercury.exe
+    
+build:linux-musl:
+  stage: build
+  script:
+  - rustup target add x86_64-unknown-linux-musl
+  - cargo build --release --target x86_64-unknown-linux-musl
+  artifacts:
+    paths:
+    - target/x86_64-unknown-linux-musl/release/mercury
