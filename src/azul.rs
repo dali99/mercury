@@ -172,6 +172,7 @@ impl Iterator for GameMoveIter {
     }
 }
 
+#[repr(packed)]
 #[derive(Clone, Debug, Copy, PartialEq, Eq, Hash)]
 struct Bag {
     blue: u8,
@@ -248,6 +249,7 @@ impl From<tinyvec::ArrayVec<[Tile; 128]>> for Bag {
 }*/
 
 
+#[repr(packed)]
 #[derive(Default, Debug, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 struct Factory (tinyvec::ArrayVec<[Tile; 4]>);
 impl Clone for Factory {
@@ -270,6 +272,7 @@ impl DerefMut for Factory {
 }
 
 
+#[repr(packed)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 struct Market (tinyvec::ArrayVec<[Tile; 28]>);
 impl Default for Market {
@@ -298,6 +301,7 @@ type Patterns = [tinyvec::ArrayVec<[Tile; 5]>; 5];
 type Row  = [bool; 5];
 type Wall = [Row;  5];
 
+#[repr(packed)]
 #[derive(Debug, Clone, Default, Copy, PartialEq, Eq, Hash)]
 struct Board {
     score: u8,
@@ -670,7 +674,6 @@ impl Hash for Game {
     fn hash<H: Hasher>(&self, state: &mut H) {
         unsafe{any_as_u8_slice(self).deref().hash(state)}
     }
-
 }
 
 // Tests
