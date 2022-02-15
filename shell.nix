@@ -23,13 +23,6 @@ with nixpkgs;
     name = "moz_overlay_shell";
     buildInputs = [
       rustNightlyChannel
-      (vscode-with-extensions.override {
-        vscodeExtensions = with vscode-extensions; [
-          bbenoist.Nix
-          vadimcn.vscode-lldb
-          matklad.rust-analyzer
-        ];
-      })
       coz
       cargo-flamegraph
       cmake
