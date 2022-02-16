@@ -100,11 +100,12 @@ fn count_options(_game: Game, depth: u8, treshold: u8) -> u128 {
 
     let mut multiplier = 1;
 
+    // Upper bound calculation by skipping first depth and assuming most complicated possible game as multiplier
     let game = match depth {
         0 => {
             let mut new_game = _game.clone();
             for i in GameMoveIter::new(2).next() {
-                match new_game.do_move( i) {
+                match new_game.do_move(i) {
                     Ok(_) => break,
                     Err(_) => continue
                 }
@@ -121,6 +122,9 @@ fn count_options(_game: Game, depth: u8, treshold: u8) -> u128 {
 
     for game_move in i {
         //println!("{:?}", game_move);
+        if game.is_legal(game_move).is_err() {
+            continue;
+        };
         let mut new_game = game.clone();
         let r = new_game.do_move(game_move);
         match r {

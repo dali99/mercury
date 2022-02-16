@@ -665,6 +665,79 @@ impl State {
         self.player = (self.player + 1) % self.boards.len() as u8;
         Ok(())
     }
+    pub fn is_legal(&self, game_move: GameMove) -> Result<(), &'static str> {
+        let board =  &self.boards[self.player as usize];
+        match game_move {
+            GameMove(_, Tile::Start, _) => return Err("You can't take the start tile specifically"),
+            GameMove(0, _, 0) => {
+                if !&self.market.contains(&game_move.1) {
+                    return Err("Market does not contain selected tile")
+                }
+                else {
+                    Ok(())
+                }
+            },
+            GameMove(0, _, 1..=5) => {
+                if self.market.len() == 0 {
+                    return Err("Market is empty");
+                }
+                else if self.market.contains(&game_move.1) {
+                    let target = &board.patterns[game_move.2 - 1];
+                    if target.first().is_some() && target[0] != game_move.1 {
+                        return Err("That pattern line already contains a different color")
+                    }
+                    let empty = game_move.2 - target.len();
+
+                    if empty == 0 {
+                        return Err("That pattern is full")
+                    }
+
+                    Ok(())
+                }
+                else {
+                    return Err("Market does not contain selected tile")
+                }
+            },
+            GameMove(1..=9, _, _) => {
+                let board =  &self.boards[self.player as usize];
+                if game_move.0 > self.factories.len() {
+                    return Err("That factory is out of bounds");
+                }
+
+                let factory = self.factories[game_move.0 - 1].deref();
+                if factory.contains(&game_move.1) {  
+                    let mut hand = factory.clone();
+                    hand.retain(|x| *x == game_move.1);
+
+                    match game_move.2 {
+                        0 => Ok(()),
+                        1..=9 => {
+                            let target = &board.patterns[game_move.2 - 1];
+                            if target.first().is_some() && target[0] != game_move.1 {
+                                return Err("That pattern line already contains a different color")
+                            }
+                            let empty = game_move.2 - target.len();
+                            if hand.len() <= empty {
+                                return Ok(())
+                            }
+                            else if empty != 0 {
+                                return Ok(())
+                            }
+                            else {
+                                return Err("That pattern line is full")
+                            }
+                        },
+                        _ => return Err("Not a valid destination")
+                    }
+                }
+                else {
+                    return Err("That tile is not in that factory")
+                }
+            },
+            GameMove(_,_,_) => return Err("Not a valid move")
+        }
+
+    }
     /*pub fn hash(&self) -> [u8; 256]{
         [
             [self.player],

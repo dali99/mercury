@@ -485,9 +485,10 @@ impl Game2 {
 use std::time::{Instant, Duration};
 
 pub fn size_of_bitfields() -> Result<(), &'static str> {
-    //println!("size of bitfield game: {}", std::mem::size_of::<Game2>());
+    println!("size of bitfield game: {}", std::mem::size_of::<Game2>());
+    println!("size of state: {}", std::mem::size_of::<super::azul::State>());
 
-    let game2 = Game2::create();
+/*    let game2 = Game2::create();
     //println!("debug: {:#?}", game2);
     //println!("{:?}", game2.into_bytes());
 
@@ -510,7 +511,7 @@ pub fn size_of_bitfields() -> Result<(), &'static str> {
     let game_1_time = now.elapsed().as_nanos();
 
     println!("{} | {}", game_1_time, game_2_time);
-
+*/
     Ok(())
 
 
