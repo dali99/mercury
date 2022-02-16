@@ -665,13 +665,13 @@ impl State {
         self.player = (self.player + 1) % self.boards.len() as u8;
         Ok(())
     }
-    pub fn hash(&self) -> [u8; 256]{
+    /*pub fn hash(&self) -> [u8; 256]{
         [
             [self.player],
             self.box_top.hash(),
             self.bag.hash()
         ].concat()
-    }
+    }*/
 }
 
 //#[repr(align(16))]

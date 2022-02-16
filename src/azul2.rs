@@ -495,7 +495,7 @@ pub fn size_of_bitfields() -> Result<(), &'static str> {
     for _ in 0..1_000_000_000 {
         let mut game2_2 = game2.clone();
         game2_2.set_player(Player2::Two);
-        std::hint::black_box(game2_2);
+        /*std::hint::black_box(game2_2);*/
     }
     let game_2_time = now.elapsed().as_nanos();
 

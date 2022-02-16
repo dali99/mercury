@@ -124,7 +124,7 @@ fn count_options(_game: Game, depth: u8, treshold: u8) -> u128 {
         let mut new_game = game.clone();
         let r = new_game.do_move(game_move);
         match r {
-            Ok(_) => sum += {/*println!("{}", depth);*/ all_failed = false; coz::progress!("OK"); multiplier * count_options(new_game, depth + 1, treshold)},
+            Ok(_) => sum += {/*println!("{}", depth);*/ all_failed = false; /*coz::progress!("OK");*/ multiplier * count_options(new_game, depth + 1, treshold)},
             Err(_) => continue
         };
     };

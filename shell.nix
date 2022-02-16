@@ -1,32 +1,38 @@
 let
-  moz_overlay = import (builtins.fetchTarball https://github.com/mozilla/nixpkgs-mozilla/archive/master.tar.gz);
-  nixpkgs = import <nixos-unstable> { overlays = [ moz_overlay ]; };
-  rustNightlyChannel = (nixpkgs.rustChannelOf { date = "2021-01-01"; channel = "nightly"; }).rust.override {
-    extensions = [
-			"rust-src"
-			"rls-preview"
-			"clippy-preview"
-			"rustfmt-preview"
-		];
-  };
-	rustStableChannel = nixpkgs.latest.rustChannels.stable.rust.override {
-		extensions = [
-			"rust-src"
-			"rls-preview"
-			"clippy-preview"
-			"rustfmt-preview"
-		];
-  };
+  pkgs = import <nixos-unstable> { };
+  fenix = import (fetchTarball "https://github.com/nix-community/fenix/archive/main.tar.gz") { };
 in
-with nixpkgs;
-  stdenv.mkDerivation {
-    name = "moz_overlay_shell";
-    buildInputs = [
-      rustNightlyChannel
-      coz
-      cargo-flamegraph
-      cmake
-      gcc
-      llvm_11
+with pkgs;
+{ windows-cross ? false }:
+stdenv.mkDerivation {
+  name = "rust_shell";
+
+  nativeBuildInputs = []
+    ++ lib.optionals windows-cross [
+      pkgsCross.mingwW64.stdenv.cc
     ];
-  }
+
+  buildInputs = [
+    (fenix.combine ([
+      fenix.complete.toolchain
+    ] ++ lib.optionals windows-cross [
+      fenix.targets.x86_64-pc-windows-gnu.latest.rust-std
+    ]))
+
+    (vscode-with-extensions.override {
+      vscodeExtensions = with vscode-extensions; [
+        bbenoist.nix
+        vadimcn.vscode-lldb
+        fenix.rust-analyzer-vscode-extension
+      ];
+    })
+
+#    cargo-flamegraph
+
+#    cmake
+#    gcc
+#    llvm_11
+  ] ++ lib.optionals windows-cross [
+    pkgsCross.mingwW64.windows.mingw_w64_pthreads
+  ];
+}
